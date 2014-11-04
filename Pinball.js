@@ -3,7 +3,7 @@
 var canvas;
 var gl;
 
-var numTimesToSubdivide = 3;
+var numTimesToSubdivide = 5;
  
 var index = 0; 
 
@@ -11,17 +11,17 @@ var pointsArray = [];
 var normalsArray = [];
 
 
-var near = -10;
-var far = 10;
-var radius = 1.5;
+var radius = 2.5;
 var theta  = 0.0;
 var phi    = 0.0;
 var dr = 5.0 * Math.PI/180.0;
 
-var left = -3.0;
-var right = 3.0;
-var ytop =3.0;
-var bottom = -3.0;
+var near = -10;
+var far = 10;
+var left = -10.0;
+var right = 10.0;
+var ytop =10.0;
+var bottom = -10.0;
 
 var va = vec4(0.0, 0.0, -1.0,1);
 var vb = vec4(0.0, 0.942809, 0.333333, 1);
@@ -33,9 +33,9 @@ var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
-var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
-var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialAmbient = vec4( 0.8, 0.8, 0.8, 1.0 );
+var materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
+var materialSpecular = vec4( 0.8, 0.8, 0.8, 1.0 );
 var materialShininess = 100.0;
 
 var ctm;
@@ -142,28 +142,10 @@ window.onload = function init() {
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
 
-    document.getElementById("Button0").onclick = function(){radius *= 2.0;};
-    document.getElementById("Button1").onclick = function(){radius *= 0.5;};
-    document.getElementById("Button2").onclick = function(){theta += dr;};
-    document.getElementById("Button3").onclick = function(){theta -= dr;};
-    document.getElementById("Button4").onclick = function(){phi += dr;};
-    document.getElementById("Button5").onclick = function(){phi -= dr;};
-    
-    document.getElementById("Button6").onclick = function(){
-        numTimesToSubdivide++; 
-        index = 0;
-        pointsArray = []; 
-        normalsArray = [];
-        init();
-    };
-    document.getElementById("Button7").onclick = function(){
-        if(numTimesToSubdivide) numTimesToSubdivide--;
-        index = 0;
-        pointsArray = []; 
-        normalsArray = [];
-        init();
-    };
-
+    document.getElementById("Button0").onclick = function(){translate(0, -0.1)};
+    document.getElementById("Button1").onclick = function(){translate(0,  0.1)};
+    document.getElementById("Button2").onclick = function(){translate( 0.1, 0)};
+    document.getElementById("Button3").onclick = function(){translate(-0.1, 0)};
 
     gl.uniform4fv( gl.getUniformLocation(program, 
        "ambientProduct"),flatten(ambientProduct) );
@@ -179,6 +161,12 @@ window.onload = function init() {
     render();
 }
 
+function translate(x, y, z) {
+	left += x;
+	right += x;
+	bottom += y;
+	ytop += y;
+}
 
 function render() {
     
