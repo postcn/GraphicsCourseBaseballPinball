@@ -23,10 +23,10 @@ var right = 10.0;
 var ytop =10.0;
 var bottom = -10.0;
 
-var va = vec4(0.0, 0.0, -1.0,1);
-var vb = vec4(0.0, 0.942809, 0.333333, 1);
-var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-var vd = vec4(0.816497, -0.471405, 0.333333,1);
+var va = vec4(0.1, 0.0, -1.0,1);
+var vb = vec4(0.1, 0.942809, 0.333333, 1);
+var vc = vec4(-0.716497, -0.471405, 0.333333, 1);
+var vd = vec4(0.916497, -0.471405, 0.333333,1);
     
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
@@ -36,7 +36,7 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 0.8, 0.8, 0.8, 1.0 );
 var materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
 var materialSpecular = vec4( 0.8, 0.8, 0.8, 1.0 );
-var materialShininess = 100.0;
+var materialShininess = 80.0;
 
 var ctm;
 var ambientColor, diffuseColor, specularColor;
@@ -147,16 +147,11 @@ window.onload = function init() {
     document.getElementById("Button2").onclick = function(){translate( 0.1, 0)};
     document.getElementById("Button3").onclick = function(){translate(-0.1, 0)};
 
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "ambientProduct"),flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "diffuseProduct"),flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "specularProduct"),flatten(specularProduct) );	
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "lightPosition"),flatten(lightPosition) );
-    gl.uniform1f( gl.getUniformLocation(program, 
-       "shininess"),materialShininess );
+    gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"),flatten(ambientProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"),flatten(diffuseProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program, "specularProduct"),flatten(specularProduct) );	
+    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"),flatten(lightPosition) );
+    gl.uniform1f( gl.getUniformLocation(program, "shininess"),materialShininess );
 
     render();
 }
