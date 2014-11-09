@@ -3,6 +3,45 @@ var GREEN = new vec4(.2, 1, .2, 1);
 var SAND = new vec4(237/255, 201/255, 175/255, 1);
 var f;
 
+var points = [];
+var normals = [];
+
+
+var near = -10;
+var far = 10;
+var radius2 = 1.5;
+var theta2  = 0.0;
+var phi2    = 0.0;
+var dr = 5.0 * Math.PI/180.0;
+
+var left = -1.0;
+var right = 1.0;
+var ytop =1.0;
+var bottom = -1.0;
+
+var va = vec4(0.0, 0.0, -1.0,1);
+var vb = vec4(0.0, 0.942809, 0.333333, 1);
+var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+var vd = vec4(0.816497, -0.471405, 0.333333,1);
+    
+var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+var materialAmbient = vec4( 1.0, 0.5, 1.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialShininess = 100.0;
+
+var ctm;
+
+var modelViewMatrix, projectionMatrix;
+var modelViewMatrixLoc, projectionMatrixLoc;
+var eye;
+var at = vec3(0.0, 0.0, 0.0);
+var up = vec3(0.0, 1.0, 0.0);
+
 var canvas;
 var gl;
 
@@ -11,7 +50,7 @@ var numVertices  = 36;
 var texSize = 256;
 var numChecks = 8;
 
-var program;
+var program1, program2;
 
 var texture1, texture2;
 var t1, t2;
@@ -70,9 +109,11 @@ var yAxis = 1;
 var zAxis = 2;
 var axis = xAxis;
 
-var theta = [-45, 180, 0];
+var theta = [-20, 180, 0];
+theta = [30,180,0];
 
 var thetaLoc;
+var thetaLoc2;
 
 function configureTexture() {
     texture1 = gl.createTexture();       
@@ -94,6 +135,89 @@ function configureTexture() {
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 }
 
+var vTexCoord;
+var tBuffer;
+var vPosition;
+var vBuffer;
+var vColor;
+var cBuffer;
+
+function bindField() {
+    cBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(f.colors), gl.STATIC_DRAW );
+    
+    vColor = gl.getAttribLocation( program1, "vColor" );
+    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vColor );
+
+    vBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(f.points), gl.STATIC_DRAW );
+    
+    vPosition = gl.getAttribLocation( program1, "vPosition" );
+    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vPosition );
+    
+    tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(f.textures), gl.STATIC_DRAW );
+    
+    vTexCoord = gl.getAttribLocation( program1, "vTexCoord" );
+    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vTexCoord );
+
+    gl.activeTexture( gl.TEXTURE0 );
+    gl.bindTexture( gl.TEXTURE_2D, texture1 );
+    gl.uniform1i(gl.getUniformLocation( program1, "Tex0"), 0);
+            
+    gl.activeTexture( gl.TEXTURE1 );
+    gl.bindTexture( gl.TEXTURE_2D, texture2 );
+    gl.uniform1i(gl.getUniformLocation( program1, "Tex1"), 1);
+
+    thetaLoc = gl.getUniformLocation(program1, "theta"); 
+}
+
+var nBuffer2;
+var vNormal2;
+var vBuffer2;
+var vPosition2;
+
+function bindLight() {
+    nBuffer2 = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer2);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
+    
+    vNormal2 = gl.getAttribLocation( program2, "vNormal" );
+    gl.vertexAttribPointer( vNormal2, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal2);
+
+
+    vBuffer2 = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer2);
+
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+    
+    vPosition2 = gl.getAttribLocation( program2, "vPosition");
+    gl.vertexAttribPointer(vPosition2, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition2);
+    
+    modelViewMatrixLoc = gl.getUniformLocation( program2, "modelViewMatrix" );
+    projectionMatrixLoc = gl.getUniformLocation( program2, "projectionMatrix" );
+
+    gl.uniform4fv( gl.getUniformLocation(program2, 
+       "ambientProduct"),flatten(ambientProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program2, 
+       "diffuseProduct"),flatten(diffuseProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program2, 
+       "specularProduct"),flatten(specularProduct) );   
+    gl.uniform4fv( gl.getUniformLocation(program2, 
+       "lightPosition"),flatten(lightPosition) );
+    gl.uniform1f( gl.getUniformLocation(program2, 
+       "shininess"),materialShininess );
+    thetaLoc2 = gl.getUniformLocation(program2, "theta");
+}
+
 window.onload = function init() {
 
     canvas = document.getElementById( "gl-canvas" );
@@ -109,55 +233,52 @@ window.onload = function init() {
     //
     //  Load shaders and initialize attribute buffers
     //
-    program = initShaders( gl, "vertex-shader", "fragment-shader" );
-    gl.useProgram( program );
+    program1 = initShaders( gl, "vertex-shader_texture", "fragment-shader_texture" );
+    gl.useProgram( program1 );
 
-    f = new Field(vec3(0,0,0), .75, .73, .70, .07);
+    f = new Field(vec3(0,-1,0), 2, 1.87, 1.9, .3);
     f.calculateShape();
-
-    var cBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(f.colors), gl.STATIC_DRAW );
     
-    var vColor = gl.getAttribLocation( program, "vColor" );
-    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vColor );
-
-    var vBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(f.points), gl.STATIC_DRAW );
-    
-    var vPosition = gl.getAttribLocation( program, "vPosition" );
-    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vPosition );
-    
-    var tBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(f.textures), gl.STATIC_DRAW );
-    
-    var vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
-    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vTexCoord );
-
     configureTexture();
-    
-    gl.activeTexture( gl.TEXTURE0 );
-    gl.bindTexture( gl.TEXTURE_2D, texture1 );
-    gl.uniform1i(gl.getUniformLocation( program, "Tex0"), 0);
-            
-    gl.activeTexture( gl.TEXTURE1 );
-    gl.bindTexture( gl.TEXTURE_2D, texture2 );
-    gl.uniform1i(gl.getUniformLocation( program, "Tex1"), 1);
 
-    thetaLoc = gl.getUniformLocation(program, "theta"); 
+    program2 = initShaders( gl, "vertex-shader_light", "fragment-shader_light" );
+    gl.useProgram(program2);
+
+    ambientProduct = mult(lightAmbient, materialAmbient);
+    diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    specularProduct = mult(lightSpecular, materialSpecular);
+
+    o2 = new Bat(vec3(-1/5,-1+(8/15),.05), 1/60, .05, .25, 75);
+    o2.calculateShape();
+
+    points = o2.points;
+    normals = o2.normals;
     
     render();
 }
 
 var render = function() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.useProgram( program1 );
+    bindField();
     gl.uniform3fv(thetaLoc, theta);
     gl.drawArrays( gl.TRIANGLES, 0, f.points.length );
+
+    gl.useProgram(program2);
+    bindLight();
+    eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2), 
+    radius2*Math.sin(theta2)*Math.sin(phi2), radius2*Math.cos(theta2));
+
+    modelViewMatrix = lookAt(eye, at , up);
+    projectionMatrix = ortho(left, right, bottom, ytop, near, far);
+            
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
+    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
+    gl.uniform3fv(thetaLoc2, theta);
+    for( var i=0; i<points.length; i+=3) 
+        gl.drawArrays( gl.TRIANGLES, i, 3 );
+    
     requestAnimFrame(render);
 }
 
