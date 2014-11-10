@@ -5,7 +5,7 @@ var f;
 var obstacles;
 var ball;
 
-var ballRadius = .020;
+var ballRadius = .05;
 
 var points = [];
 var normals = [];
@@ -119,7 +119,7 @@ var axis = xAxis;
 
 var theta = [-20, 180, 0];
 theta = [0,180,0];
-
+var dTheta = 10;
 var thetaLoc;
 var thetaLoc2;
 
@@ -233,6 +233,13 @@ window.onload = function init() {
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
+    document.getElementById("Button0").onclick = function(){theta[0] = theta[0] + dTheta};
+    document.getElementById("Button1").onclick = function(){theta[0] = theta[0] - dTheta};
+    document.getElementById("Button2").onclick = function(){theta[1] = theta[1] + dTheta};
+    document.getElementById("Button3").onclick = function(){theta[1] = theta[1] - dTheta};
+    document.getElementById("Button4").onclick = function(){theta[2] = theta[2] + dTheta};
+    document.getElementById("Button5").onclick = function(){theta[2] = theta[2] - dTheta};
+
     gl.viewport( 0, 0, canvas.width, canvas.height );
     gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
 
@@ -244,7 +251,7 @@ window.onload = function init() {
     program1 = initShaders( gl, "vertex-shader_texture", "fragment-shader_texture" );
     gl.useProgram( program1 );
 
-    f = new Field(vec3(0,-1,0), 2, 1.87, 1.9, .3);
+    f = new Field(vec3(0,-1,0), 1.9, 1.87, 1.9, .3);
     f.calculateShape();
 
     configureTexture();
@@ -260,14 +267,14 @@ window.onload = function init() {
     bat.calculateShape();
 
     obstacles = [];
-    obstacles.push(new Obstacle(vec3(0, -.25, .05), ballRadius, .125, 75));
-    obstacles.push(new Obstacle(vec3(-.1, -.1, .05), ballRadius, .125, 75, -1*Math.PI/6));
-    obstacles.push(new Obstacle(vec3(.1, -.1, .05), ballRadius, .125, 75, Math.PI/6));
-    obstacles.push(new Obstacle(vec3(-.30, -.25, .05), ballRadius, .125, 75, -1*Math.PI/4));
-    obstacles.push(new Obstacle(vec3(.30, -.25, .05), ballRadius, .125, 75, Math.PI/4));
-    obstacles.push(new Obstacle(vec3(0, .5, .05), ballRadius, .125, 75));
-    obstacles.push(new Obstacle(vec3(-.5, .32, .05), ballRadius, .125, 75, -1*Math.PI/4));
-    obstacles.push(new Obstacle(vec3(.5, .32, .05), ballRadius, .125, 75, Math.PI/4));
+    obstacles.push(new Obstacle(vec3(0, -.25, 0), ballRadius, .1, 75));
+    obstacles.push(new Obstacle(vec3(-.1, -.1,0), ballRadius, .1, 75, -1*Math.PI/6));
+    obstacles.push(new Obstacle(vec3(.1, -.1, 0), ballRadius, .1, 75, Math.PI/6));
+    obstacles.push(new Obstacle(vec3(-.30, -.25, 0), ballRadius, .1, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.30, -.25, 0), ballRadius, .1, 75, Math.PI/4));
+    obstacles.push(new Obstacle(vec3(0, .5, 0), ballRadius, .1, 75));
+    obstacles.push(new Obstacle(vec3(-.5, .32, 0), ballRadius, .1, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.5, .32, 0), ballRadius, .1, 75, Math.PI/4));
 
     obstaclePoints = [];
     obstacleNormals = [];
@@ -666,14 +673,16 @@ Ball.prototype.triangle = function(a, b, c) {
      this.normalsArray.push(normal);
      this.normalsArray.push(normal);
 
-     var e = vec3(a,b,c);
-     e = scale(this.radius, e);
-    //  this.pointsArray.push(a);
-    //  this.pointsArray.push(b);
-    //  this.pointsArray.push(c);
-    this.pointsArray.push(e[0]);
-    this.pointsArray.push(e[1]);
-    this.pointsArray.push(e[2]);
+     a = scale(ballRadius, a);
+     b = scale(ballRadius, b);
+     c = scale(ballRadius, c);
+     a[3] = 1;
+     b[3] = 1;
+     c[3] = 1;
+
+     this.pointsArray.push(a);
+     this.pointsArray.push(b);
+     this.pointsArray.push(c);
 
      this.index += 3;
 }

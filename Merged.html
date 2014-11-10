@@ -41,7 +41,7 @@ void main()
             0.0,  0.0, 1.0, 0.0,
             0.0,  0.0, 0.0, 1.0 );
     gl_Position = rz * ry * rx * vPosition;
-    
+
 }
 </script>
 
@@ -56,9 +56,9 @@ uniform float shininess;
 varying vec3 N, L, E;
 
 void main()
-{    
+{
     vec4 fColor;
-    
+
     vec3 H = normalize( L + E );
     vec4 ambient = ambientProduct;
 
@@ -67,7 +67,7 @@ void main()
 
     float Ks = pow( max(dot(N, H), 0.0), shininess );
     vec4  specular = Ks * specularProduct;
-    
+
     if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
 
     fColor = ambient + diffuse +specular;
@@ -88,7 +88,7 @@ varying vec2 fTexCoord;
 
 uniform vec3 theta;
 
-void main() 
+void main()
 {
     // Compute the sines and cosines of theta for each of
     //   the three axes in one computation.
@@ -116,7 +116,7 @@ void main()
     fColor = vColor;
     fTexCoord = vTexCoord;
     gl_Position = rz * ry * rx * vPosition;
-} 
+}
 </script>
 
 <script id="fragment-shader_texture" type="x-shader/x-fragment">
@@ -143,6 +143,12 @@ main()
 <script type="text/javascript" src="Merged.js"></script>
 
 <body>
+<button id = "Button0">Rotate X+</button>
+<button id = "Button1">Rotate X-</button>
+<button id = "Button2">Rotate Y+</button>
+<button id = "Button3">Rotate Y-</button>
+<button id = "Button4">Rotate Z+</button>
+<button id = "Button5">Rotate Z-</button>
 <canvas id="gl-canvas" width="1024" height="1024">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
