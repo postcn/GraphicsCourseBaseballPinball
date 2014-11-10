@@ -5,7 +5,7 @@ var gl;
 
 var points = [];
 var normals = [];
-
+var b;
 
 var near = -10;
 var far = 10;
@@ -67,12 +67,12 @@ window.onload = function init() {
 
     
     //o = new Bat(vec3(0,0,0), .5, .15, 75);
-    o2 = new Bat(vec3(-0.95,0,0), .05, .15, 1.2, 75);
+    b = new Bat(vec3(0,0,0), .025, .15, .95, 75, 7 * Math.PI / 6);
     //o.calculateShape();
-    o2.calculateShape();
+    b.calculateShape();
 
-    points = o2.points;
-    normals = o2.normals;
+    points = b.points;
+    normals = b.normals;
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
@@ -130,7 +130,7 @@ function render() {
             
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
-    for( var i=0; i<points.length; i+=3) 
+    for( var i=0; i<b.points.length; i+=3) 
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 
     window.requestAnimFrame(render);
@@ -145,7 +145,7 @@ function render() {
 Bat. This object will be the Bat for the pinball game. It will be an ellipse outside with half circle cutout inside.
 center is the defined center point of the semicircle cut into the edge and the outer edge which is the ellipse.
 */
-function Bat(knobCenter, radius, height, batLength, divisions) {
+function Bat(knobCenter, radius, height, batLength, divisions, angle) {
     this.knobCenter = knobCenter;
     this.radius = radius;
     this.height = height;
@@ -153,12 +153,13 @@ function Bat(knobCenter, radius, height, batLength, divisions) {
     this.divisions = divisions;
     this.normals = [];
     this.points = [];
-}
+	this.batAngle = angle;
+};
 
 Bat.prototype.calculateShape = function() {
-    elipse1 = ellipse(this.knobCenter, 2*this.radius, this.radius, 0, 2 * Math.PI, 2 * Math.PI/this.divisions);
-	var endCenter =[this.knobCenter[0]+this.batLength, this.knobCenter[1], this.knobCenter[2]];
-	elipse2 = ellipse(endCenter, 3*this.radius, 2*this.radius, 0, 2*Math.PI, 2 * Math.PI/this.divisions);
+    elipse1 = ellipseWithRotation(this.knobCenter, 2*this.radius, this.radius, 0, 2 * Math.PI, 2 * Math.PI/this.divisions, this.batAngle);
+	var endCenter =[this.knobCenter[0]+(this.batLength * Math.cos(this.batAngle)), this.knobCenter[1]+(this.batLength * Math.sin(this.batAngle)), this.knobCenter[2]];
+	elipse2 = ellipseWithRotation(endCenter, 3*this.radius, 2*this.radius, 0, 2*Math.PI, 2 * Math.PI/this.divisions, this.batAngle);
     this.getTopAndBottomCirclePanels(this.knobCenter, elipse1);
 	this.getTopAndBottomBarrelPanels(this.knobCenter, endCenter);
 	this.getTopAndBottomCirclePanels(endCenter, elipse2);
@@ -166,7 +167,7 @@ Bat.prototype.calculateShape = function() {
     this.getSideCirclePanel(this.knobCenter, elipse1);
 	this.getSideBarrelPanel(this.knobCenter, endCenter);
 	this.getSideCirclePanel(endCenter, elipse2);
-}
+};
 
 Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) {
 
@@ -211,12 +212,50 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
-}
+};
 
 Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
-	p1 = vec4(knob[0], knob[1]+this.radius/2, knob[2]+this.height/2,1);
-	p2 = vec4(end[0], end[1]+3*this.radius, end[2]+this.height/2,1);
-	p3 = vec4(end[0], end[1], end[2]+this.height/2,1);
+	p1 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] + this.height/2,1);
+	p2 = vec4(end[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
+		end[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+		end[2] + this.height/2,1);
+	p3 = vec4(end[0], 
+		end[1], 
+		end[2] + this.height/2,1);
+	this.points = this.points.concat([p1,p3,p2]);
+	var t1 = subtract(p1,p3);
+	var t2 = subtract(p1,p2);
+	var normal = normalize(cross(t1, t2));
+	normal = vec4(normal);
+	this.normals = this.normals.concat([normal,normal,normal]);
+
+	p1 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] - this.height/2,1);
+	p2 = vec4(end[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
+		end[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+		end[2] - this.height/2,1);
+	p3 = vec4(end[0], 
+		end[1], 
+		end[2] - this.height/2,1);
+	this.points = this.points.concat([p1,p3,p2]);
+	var t1 = subtract(p1,p3);
+	var t2 = subtract(p1,p2);
+	var normal = normalize(cross(t1, t2));
+	normal = vec4(normal);
+	this.normals = this.normals.concat([normal,normal,normal]);
+	
+	p1 = vec4(end[0], 
+		end[1], 
+		end[2] + this.height/2,1);
+	p2 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] + this.height/2,1);
+	p3 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p2);
 	var t2 = subtract(p1,p3);
@@ -224,9 +263,15 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
-	p1 = vec4(knob[0], knob[1]+this.radius/2, knob[2]-this.height/2,1);
-	p2 = vec4(end[0], end[1]+3*this.radius, end[2]-this.height/2,1);
-	p3 = vec4(end[0], end[1], end[2]-this.height/2,1);
+	p1 = vec4(end[0], 
+		end[1], 
+		end[2] - this.height/2,1);
+	p2 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] - this.height/2,1);
+	p3 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p2);
 	var t2 = subtract(p1,p3);
@@ -234,46 +279,38 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 	
-	p1 = vec4(end[0], end[1], end[2]+this.height/2,1);
-	p2 = vec4(knob[0], knob[1]-this.radius/2, knob[2]+this.height/2,1);
-	p3 = vec4(knob[0], knob[1]+this.radius/2, knob[2]+this.height/2,1);
+	p1 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] + this.height/2,1);
+	p2 = vec4(end[0], 
+		end[1], 
+		end[2] + this.height/2,1);
+	p3 = vec4(end[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
+		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+		end[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p2);
-	var t2 = subtract(p1,p3);
+	var t1 = subtract(p1,p3);
+	var t2 = subtract(p1,p2);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
-	p1 = vec4(end[0], end[1], end[2]-this.height/2,1);
-	p2 = vec4(knob[0], knob[1]-this.radius/2, knob[2]-this.height/2,1);
-	p3 = vec4(knob[0], knob[1]+this.radius/2, knob[2]-this.height/2,1);
+	p1 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[2] - this.height/2,1);
+	p2 = vec4(end[0], 
+		end[1], 
+		end[2] - this.height/2,1);
+	p3 = vec4(end[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
+		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+		end[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p2);
-	var t2 = subtract(p1,p3);
+	var t1 = subtract(p1,p3);
+	var t2 = subtract(p1,p2);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
-	
-	p1 = vec4(knob[0], knob[1]-this.radius/2, knob[2]+this.height/2,1);
-	p2 = vec4(end[0], end[1], end[2]+this.height/2,1);
-	p3 = vec4(end[0], end[1]-3*this.radius, end[2]+this.height/2,1);
-	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p2);
-	var t2 = subtract(p1,p3);
-	var normal = normalize(cross(t1, t2));
-	normal = vec4(normal);
-	this.normals = this.normals.concat([normal,normal,normal]);
-
-	p1 = vec4(knob[0], knob[1]-this.radius/2, knob[2]-this.height/2,1);
-	p2 = vec4(end[0], end[1], end[2]-this.height/2,1);
-	p3 = vec4(end[0], end[1]-3*this.radius, end[2]-this.height/2,1);
-	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p2);
-	var t2 = subtract(p1,p3);
-	var normal = normalize(cross(t1, t2));
-	normal = vec4(normal);
-	this.normals = this.normals.concat([normal,normal,normal]);
-}
+};
 
 Bat.prototype.getSideCirclePanel = function(center, circlePoints) {
     for (var i=0; i<circlePoints.length-1; i++) {
@@ -289,33 +326,49 @@ Bat.prototype.getSideCirclePanel = function(center, circlePoints) {
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
     }
-}
+};
 
 Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
-	p1 = vec4(center[0], center[1]+this.radius/2, center[2]+this.height/2, 1);
-	p2 = vec4(endCenter[0], endCenter[1]+3*this.radius, endCenter[2]+this.height/2, 1);
-	p3 = vec4(center[0], center[1]+this.radius/2, center[2]-this.height/2, 1);
-	p4 = vec4(endCenter[0], endCenter[1]+3*this.radius, endCenter[2]-this.height/2, 1);
+	p1 = vec4(center[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
+		center[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[2] + this.height/2,1);
+	p2 = vec4(endCenter[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
+		endCenter[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+		endCenter[2] + this.height/2,1);
+	p3 = vec4(center[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
+		center[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[2] - this.height/2,1);
+	p4 = vec4(endCenter[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
+		endCenter[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+		endCenter[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p4,p2]);
 	this.points = this.points.concat([p1,p3,p4]);
 	var t1 = subtract(p2, p1);
 	var t2 = subtract(p3, p1);
-	var normal = normalize(cross(t1, t2));
+	var normal = normalize(cross(t2, t1));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
 	
-	p3 = vec4(center[0], center[1]-this.radius/2, center[2]+this.height/2, 1);
-	p4 = vec4(endCenter[0], endCenter[1]-3*this.radius, endCenter[2]+this.height/2, 1);
-	p1 = vec4(center[0], center[1]-this.radius/2, center[2]-this.height/2, 1);
-	p2 = vec4(endCenter[0], endCenter[1]-3*this.radius, endCenter[2]-this.height/2, 1);
+	p1 = vec4(center[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
+		center[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[2] - this.height/2,1);
+	p2 = vec4(endCenter[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
+		endCenter[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+		endCenter[2] - this.height/2,1);
+	p3 = vec4(center[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
+		center[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[2] + this.height/2,1);
+	p4 = vec4(endCenter[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
+		endCenter[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+		endCenter[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p4,p2]);
 	this.points = this.points.concat([p1,p3,p4]);
 	var t1 = subtract(p2, p1);
 	var t2 = subtract(p3, p1);
-	var normal = normalize(cross(t1, t2));
+	var normal = normalize(cross(t2, t1));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
-}
+};
 
 /*
 Generates a list of points around the edge of an ellipse in 2 space.
@@ -326,6 +379,21 @@ function ellipse(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta)
     while (currentTheta < endTheta) {
         ellipsePoints.push(vec2(xRadius*Math.sin(currentTheta) + centerPoint[0], yRadius*Math.cos(currentTheta)+centerPoint[1]));
         currentTheta += stepTheta;
+    }
+    return ellipsePoints;
+}
+
+/*
+Generates a list of points around the edge of an ellipse in 2 space.
+*/
+function ellipseWithRotation(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta, angle) {
+    var ellipsePoints = [];
+    var currentTheta = startTheta;
+    while (currentTheta < endTheta) {
+		ellipsePoints.push(vec2(
+		Math.cos(angle)*xRadius*Math.cos(currentTheta) + Math.sin(-1*angle)*yRadius*Math.sin(currentTheta) + centerPoint[0], 
+		Math.sin(angle)*xRadius*Math.cos(currentTheta) + Math.cos(-1*angle)*yRadius*Math.sin(currentTheta) + centerPoint[1]));
+		currentTheta += stepTheta;
     }
     return ellipsePoints;
 }
