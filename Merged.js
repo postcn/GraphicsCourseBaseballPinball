@@ -2,9 +2,17 @@ var GRAY = new vec4(125/255,125/255,125/255);
 var GREEN = new vec4(.2, 1, .2, 1);
 var SAND = new vec4(237/255, 201/255, 175/255, 1);
 var f;
+var obstacles;
+var ball;
+
+var ballRadius = .020;
 
 var points = [];
 var normals = [];
+
+var pointsArray = [];
+var normalsArray = [];
+var index = 0;
 
 
 var near = -10;
@@ -23,8 +31,8 @@ var va = vec4(0.0, 0.0, -1.0,1);
 var vb = vec4(0.0, 0.942809, 0.333333, 1);
 var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 var vd = vec4(0.816497, -0.471405, 0.333333,1);
-    
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+
+var lightPosition = vec4(-1.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -74,7 +82,7 @@ var image1 = new Uint8Array(4*texSize*texSize);
             image1[4*i*texSize+4*j+3] = 255;
         }
     }
-    
+
 var image2 = new Uint8Array(4*texSize*texSize);
 
     // Create a checkerboard pattern
@@ -102,26 +110,26 @@ var BOTTOM_LEFT = texCoord[0];
 var TOP_LEFT = texCoord[1];
 var BOTTOM_RIGHT = texCoord[3];
 var TOP_RIGHT = texCoord[2];
-   
-    
+
+
 var xAxis = 0;
 var yAxis = 1;
 var zAxis = 2;
 var axis = xAxis;
 
 var theta = [-20, 180, 0];
-theta = [30,180,0];
+theta = [0,180,0];
 
 var thetaLoc;
 var thetaLoc2;
 
 function configureTexture() {
-    texture1 = gl.createTexture();       
+    texture1 = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture1 );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, image1);
     gl.generateMipmap( gl.TEXTURE_2D );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
                       gl.NEAREST_MIPMAP_LINEAR );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
@@ -130,7 +138,7 @@ function configureTexture() {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, image2);
     gl.generateMipmap( gl.TEXTURE_2D );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
                       gl.NEAREST_MIPMAP_LINEAR );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 }
@@ -146,7 +154,7 @@ function bindField() {
     cBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(f.colors), gl.STATIC_DRAW );
-    
+
     vColor = gl.getAttribLocation( program1, "vColor" );
     gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vColor );
@@ -154,15 +162,15 @@ function bindField() {
     vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(f.points), gl.STATIC_DRAW );
-    
+
     vPosition = gl.getAttribLocation( program1, "vPosition" );
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
-    
+
     tBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(f.textures), gl.STATIC_DRAW );
-    
+
     vTexCoord = gl.getAttribLocation( program1, "vTexCoord" );
     gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vTexCoord );
@@ -170,12 +178,12 @@ function bindField() {
     gl.activeTexture( gl.TEXTURE0 );
     gl.bindTexture( gl.TEXTURE_2D, texture1 );
     gl.uniform1i(gl.getUniformLocation( program1, "Tex0"), 0);
-            
+
     gl.activeTexture( gl.TEXTURE1 );
     gl.bindTexture( gl.TEXTURE_2D, texture2 );
     gl.uniform1i(gl.getUniformLocation( program1, "Tex1"), 1);
 
-    thetaLoc = gl.getUniformLocation(program1, "theta"); 
+    thetaLoc = gl.getUniformLocation(program1, "theta");
 }
 
 var nBuffer2;
@@ -187,7 +195,7 @@ function bindLight() {
     nBuffer2 = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer2);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
-    
+
     vNormal2 = gl.getAttribLocation( program2, "vNormal" );
     gl.vertexAttribPointer( vNormal2, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal2);
@@ -197,23 +205,23 @@ function bindLight() {
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer2);
 
     gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
-    
+
     vPosition2 = gl.getAttribLocation( program2, "vPosition");
     gl.vertexAttribPointer(vPosition2, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition2);
-    
+
     modelViewMatrixLoc = gl.getUniformLocation( program2, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program2, "projectionMatrix" );
 
-    gl.uniform4fv( gl.getUniformLocation(program2, 
+    gl.uniform4fv( gl.getUniformLocation(program2,
        "ambientProduct"),flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program2, 
+    gl.uniform4fv( gl.getUniformLocation(program2,
        "diffuseProduct"),flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program2, 
-       "specularProduct"),flatten(specularProduct) );   
-    gl.uniform4fv( gl.getUniformLocation(program2, 
+    gl.uniform4fv( gl.getUniformLocation(program2,
+       "specularProduct"),flatten(specularProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program2,
        "lightPosition"),flatten(lightPosition) );
-    gl.uniform1f( gl.getUniformLocation(program2, 
+    gl.uniform1f( gl.getUniformLocation(program2,
        "shininess"),materialShininess );
     thetaLoc2 = gl.getUniformLocation(program2, "theta");
 }
@@ -221,13 +229,13 @@ function bindLight() {
 window.onload = function init() {
 
     canvas = document.getElementById( "gl-canvas" );
-    
+
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
     gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
-    
+
     gl.enable(gl.DEPTH_TEST);
 
     //
@@ -238,7 +246,7 @@ window.onload = function init() {
 
     f = new Field(vec3(0,-1,0), 2, 1.87, 1.9, .3);
     f.calculateShape();
-    
+
     configureTexture();
 
     program2 = initShaders( gl, "vertex-shader_light", "fragment-shader_light" );
@@ -248,12 +256,34 @@ window.onload = function init() {
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
 
-    o2 = new Bat(vec3(-1/5,-1+(8/15),.05), 1/60, .05, .25, 75);
-    o2.calculateShape();
+    bat = new Bat(vec3(-1/5,-1+(8/15),.05), 1/60, .05, .25, 75);
+    bat.calculateShape();
 
-    points = o2.points;
-    normals = o2.normals;
-    
+    obstacles = [];
+    obstacles.push(new Obstacle(vec3(0, -.25, .05), ballRadius, .125, 75));
+    obstacles.push(new Obstacle(vec3(-.1, -.1, .05), ballRadius, .125, 75, -1*Math.PI/6));
+    obstacles.push(new Obstacle(vec3(.1, -.1, .05), ballRadius, .125, 75, Math.PI/6));
+    obstacles.push(new Obstacle(vec3(-.30, -.25, .05), ballRadius, .125, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.30, -.25, .05), ballRadius, .125, 75, Math.PI/4));
+    obstacles.push(new Obstacle(vec3(0, .5, .05), ballRadius, .125, 75));
+    obstacles.push(new Obstacle(vec3(-.5, .32, .05), ballRadius, .125, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.5, .32, .05), ballRadius, .125, 75, Math.PI/4));
+
+    obstaclePoints = [];
+    obstacleNormals = [];
+    for (var i=0; i< obstacles.length; i++) {
+      obstacles[i].calculateShape();
+      obstaclePoints = obstaclePoints.concat(obstacles[i].points);
+      obstacleNormals = obstaclePoints.concat(obstacles[i].normals);
+    }
+
+    ball = new Ball(ballRadius, 5);
+    ball.calculateShape();
+    //tetrahedron(va, vb, vc, vd, 5);
+
+    points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
+    normals = bat.normals.concat(obstacleNormals).concat(ball.normalsArray);
+
     render();
 }
 
@@ -267,18 +297,18 @@ var render = function() {
 
     gl.useProgram(program2);
     bindLight();
-    eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2), 
+    eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2),
     radius2*Math.sin(theta2)*Math.sin(phi2), radius2*Math.cos(theta2));
 
     modelViewMatrix = lookAt(eye, at , up);
     projectionMatrix = ortho(left, right, bottom, ytop, near, far);
-            
+
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniform3fv(thetaLoc2, theta);
-    for( var i=0; i<points.length; i+=3) 
+    for( var i=0; i<points.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
-    
+
     requestAnimFrame(render);
 }
 
@@ -289,9 +319,13 @@ Add the code for the field object and associated information
 /*
 Generates a list of points around the edge of an ellipse in 2 space.
 */
-function ellipse(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta) {
+function ellipse(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta, offsetTheta) {
     var ellipsePoints = [];
-    var currentTheta = startTheta;
+    //if (!offsetTheta) {
+      offsetTheta = 0;
+    //}
+    var currentTheta = startTheta + offsetTheta;
+    endTheta = endTheta + offsetTheta;
     while (currentTheta < endTheta) {
         ellipsePoints.push(vec2(xRadius*Math.sin(currentTheta) + centerPoint[0], yRadius*Math.cos(currentTheta)+centerPoint[1]));
         currentTheta += stepTheta;
@@ -308,7 +342,7 @@ function Field(centerPoint, centerFieldWall, rightFieldWall, leftFieldWall, heig
     this.textures = [];
     this.colors = [];
     this.height = height;
-};          
+};
 
 Field.prototype.calculateShape = function() {
     var ellipsePoints = ellipse(this.centerPoint, this.y, this.xleft, -1*Math.PI/4, 0, .1).concat(ellipse(this.centerPoint, this.y, this.xright, 0, Math.PI/4, .1));
@@ -361,22 +395,23 @@ Field.prototype.addFloor = function(ellipsePoints) {
     }
 };
 
-function Obstacle(center, radius, height, divisions) {
+function Obstacle(center, radius, height, divisions, offsetTheta) {
     this.center = center;
     this.radius = radius;
     this.height = height;
     this.divisions = divisions;
     this.normals = [];
     this.points = [];
+    this.offsetTheta = offsetTheta;
 }
 
 Obstacle.prototype.calculateShape = function() {
-    ellipsePoints = ellipse(this.center, 3*this.radius, this.radius, -1*Math.PI/2, Math.PI/2, Math.PI/this.divisions);
-    circlePoints = ellipse(this.center, this.radius, this.radius, -1*Math.PI/2, Math.PI/2, Math.PI/this.divisions);
+    ellipsePoints = ellipse(this.center, 3*this.radius, this.radius, -1*Math.PI/2, Math.PI/2, Math.PI/this.divisions, this.offsetTheta);
+    circlePoints = ellipse(this.center, this.radius, this.radius, -1*Math.PI/2, Math.PI/2, Math.PI/this.divisions, this.offsetTheta);
 
     this.getSidePanel(ellipsePoints, circlePoints);
     this.getTopAndBottomPanels(ellipsePoints, circlePoints);
-    
+
 }
 
 Obstacle.prototype.getTopAndBottomPanels = function(ellipsePoints, circlePoints) {
@@ -448,15 +483,15 @@ function Bat(knobCenter, radius, height, batLength, divisions) {
 
 Bat.prototype.calculateShape = function() {
     elipse1 = ellipse(this.knobCenter, 2*this.radius, this.radius, 0, 2 * Math.PI, 2 * Math.PI/this.divisions);
-                var endCenter =[this.knobCenter[0]+this.batLength, this.knobCenter[1], this.knobCenter[2]];
-                elipse2 = ellipse(endCenter, 3*this.radius, 2*this.radius, 0, 2*Math.PI, 2 * Math.PI/this.divisions);
+    var endCenter =[this.knobCenter[0]+this.batLength, this.knobCenter[1], this.knobCenter[2]];
+    elipse2 = ellipse(endCenter, 3*this.radius, 2*this.radius, 0, 2*Math.PI, 2 * Math.PI/this.divisions);
     this.getTopAndBottomCirclePanels(this.knobCenter, elipse1);
-                this.getTopAndBottomBarrelPanels(this.knobCenter, endCenter);
-                this.getTopAndBottomCirclePanels(endCenter, elipse2);
-                
+    this.getTopAndBottomBarrelPanels(this.knobCenter, endCenter);
+    this.getTopAndBottomCirclePanels(endCenter, elipse2);
+
     this.getSideCirclePanel(this.knobCenter, elipse1);
-                this.getSideBarrelPanel(this.knobCenter, endCenter);
-                this.getSideCirclePanel(endCenter, elipse2);
+    this.getSideBarrelPanel(this.knobCenter, endCenter);
+    this.getSideCirclePanel(endCenter, elipse2);
 }
 
 Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) {
@@ -482,7 +517,7 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal]);
     }
-                
+
     p1 = vec4(centerPoint[0], centerPoint[1], centerPoint[2]+this.height/2,1);
     p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]+this.height/2,1);
     p3 = vec4(circlePoints[0][0], circlePoints[0][1], centerPoint[2]+this.height/2,1);
@@ -524,7 +559,7 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
     var normal = normalize(cross(t1, t2));
     normal = vec4(normal);
     this.normals = this.normals.concat([normal,normal,normal]);
-    
+
     p1 = vec4(end[0], end[1], end[2]+this.height/2,1);
     p2 = vec4(knob[0], knob[1]-this.radius/2, knob[2]+this.height/2,1);
     p3 = vec4(knob[0], knob[1]+this.radius/2, knob[2]+this.height/2,1);
@@ -544,7 +579,7 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
     var normal = normalize(cross(t1, t2));
     normal = vec4(normal);
     this.normals = this.normals.concat([normal,normal,normal]);
-    
+
     p1 = vec4(knob[0], knob[1]-this.radius/2, knob[2]+this.height/2,1);
     p2 = vec4(end[0], end[1], end[2]+this.height/2,1);
     p3 = vec4(end[0], end[1]-3*this.radius, end[2]+this.height/2,1);
@@ -594,7 +629,7 @@ Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
     var normal = normalize(cross(t1, t2));
     normal = vec4(normal);
     this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
-    
+
     p3 = vec4(center[0], center[1]-this.radius/2, center[2]+this.height/2, 1);
     p4 = vec4(endCenter[0], endCenter[1]-3*this.radius, endCenter[2]+this.height/2, 1);
     p1 = vec4(center[0], center[1]-this.radius/2, center[2]-this.height/2, 1);
@@ -606,4 +641,67 @@ Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
     var normal = normalize(cross(t1, t2));
     normal = vec4(normal);
     this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
+}
+
+function Ball(radius, timesToSubdivide) {
+  this.timesToSubdivide = timesToSubdivide;
+  this.normalsArray = [];
+  this.pointsArray = [];
+  this.index = 0;
+  this.radius= radius;
+}
+
+Ball.prototype.calculateShape = function () {
+  this.tetrahedron(va, va, vc, vd, this.timesToSubdivide);
+}
+
+Ball.prototype.triangle = function(a, b, c) {
+
+     var t1 = subtract(b, a);
+     var t2 = subtract(c, a);
+     var normal = normalize(cross(t1, t2));
+     normal = vec4(normal);
+
+     this.normalsArray.push(normal);
+     this.normalsArray.push(normal);
+     this.normalsArray.push(normal);
+
+     var e = vec3(a,b,c);
+     e = scale(this.radius, e);
+    //  this.pointsArray.push(a);
+    //  this.pointsArray.push(b);
+    //  this.pointsArray.push(c);
+    this.pointsArray.push(e[0]);
+    this.pointsArray.push(e[1]);
+    this.pointsArray.push(e[2]);
+
+     this.index += 3;
+}
+
+Ball.prototype.divideTriangle = function(a,b,c,count) {
+    if ( count > 0 ) {
+
+        var ab = mix( a, b, 0.5);
+        var ac = mix( a, c, 0.5);
+        var bc = mix( b, c, 0.5);
+
+        ab = normalize(ab, true);
+        ac = normalize(ac, true);
+        bc = normalize(bc, true);
+
+        this.divideTriangle( a, ab, ac, count - 1 );
+        this.divideTriangle( ab, b, bc, count - 1 );
+        this.divideTriangle( bc, c, ac, count - 1 );
+        this.divideTriangle( ab, bc, ac, count - 1 );
+    }
+    else {
+        this.triangle( a, b, c );
+    }
+}
+
+Ball.prototype.tetrahedron = function (a, b, c, d, n) {
+    this.divideTriangle(a, b, c, n);
+    this.divideTriangle(d, c, b, n);
+    this.divideTriangle(a, d, b, n);
+    this.divideTriangle(a, c, d, n);
 }
