@@ -3,7 +3,7 @@
 var canvas;
 var gl;
 
-var numTimesToSubdivide = 5;
+var numTimesToSubdivide = 0;
 
 var index = 0;
 
@@ -18,25 +18,27 @@ var dr = 5.0 * Math.PI/180.0;
 
 var near = -10;
 var far = 10;
-var left = -10.0;
-var right = 10.0;
-var ytop =10.0;
-var bottom = -10.0;
+var left = -1.0;
+var right = 1.0;
+var ytop =1.0;
+var bottom = -1.0;
 
-var va = vec4(0.1, 0.0, -1.0,1);
-var vb = vec4(0.1, 0.942809, 0.333333, 1);
-var vc = vec4(-0.716497, -0.471405, 0.333333, 1);
-var vd = vec4(0.916497, -0.471405, 0.333333,1);
+var va = vec4(0.1, 0.0, 1.0,1);
+var vb = vec4(0.1, 0.942809, -0.333333, 1);
+var vc = vec4(-0.716497, -0.471405, -0.333333, 1);
+var vd = vec4(0.916497, -0.471405, -0.333333,1);
 
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
-var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
+var dlp = .1;
+var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var materialAmbient = vec4( 0.8, 0.8, 0.8, 1.0 );
-var materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
-var materialSpecular = vec4( 0.8, 0.8, 0.8, 1.0 );
+var materialAmbient = vec4( 1.0, 0.5, 1.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialShininess = 80.0;
+
 
 var ctm;
 var ambientColor, diffuseColor, specularColor;
@@ -60,14 +62,12 @@ function triangle(a, b, c) {
      normalsArray.push(normal);
      normalsArray.push(normal);
 
-     console.log(a);
      a = scale(sradius, a);
      b = scale(sradius, b);
      c = scale(sradius, c);
      a[3] = 1;
      b[3] = 1;
      c[3] = 1;
-     console.log(a);
 
      pointsArray.push(a);
      pointsArray.push(b);
@@ -131,6 +131,7 @@ window.onload = function init() {
 
 
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+	alert(normalsArray);
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);

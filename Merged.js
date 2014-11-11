@@ -6,6 +6,7 @@ var obstacles;
 var ball;
 
 var ballRadius = .03;
+var sRadius = .05
 
 var points = [];
 var normals = [];
@@ -23,13 +24,12 @@ var right = 1.0;
 var ytop =1.0;
 var bottom = -1.0;
 
-var va = vec4(0.0, 0.0, -1.0,1);
-var vb = vec4(0.0, 0.942809, 0.333333, 1);
-var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-var vd = vec4(0.816497, -0.471405, 0.333333,1);
+var va = vec4(0.1, 0.0, 1.0,1);
+var vb = vec4(0.1, 0.942809, -0.333333, 1);
+var vc = vec4(-0.716497, -0.471405, -0.333333, 1);
+var vd = vec4(0.916497, -0.471405, -0.333333,1);
 
 var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
-//lightPosition = vec4(0, 0, 0, 0);
 var dlp = .1;
 var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -38,7 +38,7 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 1.0, 0.5, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
-var materialShininess = 100.0;
+var materialShininess = 80.0;
 
 var ctm;
 
@@ -283,14 +283,14 @@ window.onload = function init() {
     bat.calculateShape();
 
     obstacles = [];
-    obstacles.push(new Obstacle(vec3(0, -.25, -.09), ballRadius, .1, 75));
-    obstacles.push(new Obstacle(vec3(-.1, -.1,-.09), ballRadius, .1, 75, -1*Math.PI/6));
-    obstacles.push(new Obstacle(vec3(.1, -.1, -.09), ballRadius, .1, 75, Math.PI/6));
-    obstacles.push(new Obstacle(vec3(-.30, -.25, -.09), ballRadius, .1, 75, -1*Math.PI/4));
-    obstacles.push(new Obstacle(vec3(.30, -.25, -.09), ballRadius, .1, 75, Math.PI/4));
-    obstacles.push(new Obstacle(vec3(0, .5, -.09), ballRadius, .1, 75));
-    obstacles.push(new Obstacle(vec3(-.5, .32, -.09), ballRadius, .1, 75, -1*Math.PI/4));
-    obstacles.push(new Obstacle(vec3(.5, .32, -.09), ballRadius, .1, 75, Math.PI/4));
+    obstacles.push(new Obstacle(vec3(0, -.4, -.09), ballRadius, .1, 75));
+    obstacles.push(new Obstacle(vec3(-.15, -.25,-.09), ballRadius, .1, 75, -1*Math.PI/6));
+    obstacles.push(new Obstacle(vec3(.15, -.25, -.09), ballRadius, .1, 75, Math.PI/6));
+    obstacles.push(new Obstacle(vec3(-.3, -.4, -.09), ballRadius, .1, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.3, -.4, -.09), ballRadius, .1, 75, Math.PI/4));
+    obstacles.push(new Obstacle(vec3(0, .4, -.09), ballRadius, .1, 75));
+    obstacles.push(new Obstacle(vec3(-.5, .25, -.09), ballRadius, .1, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.5, .25, -.09), ballRadius, .1, 75, Math.PI/4));
 
     obstaclePoints = [];
     obstacleNormals = [];
@@ -300,7 +300,7 @@ window.onload = function init() {
       obstacleNormals = obstaclePoints.concat(obstacles[i].normals);
     }
 
-    ball = new Ball(vec4(.4, .25, 0, 0),ballRadius, 4);
+    ball = new Ball(vec4(.3, .2, 0, 0),ballRadius, 5);
     ball.calculateShape();
 
     points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
@@ -343,9 +343,7 @@ Generates a list of points around the edge of an ellipse in 2 space.
 */
 function ellipse(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta, offsetTheta) {
     var ellipsePoints = [];
-    //if (!offsetTheta) {
-      offsetTheta = 0;
-    //}
+    offsetTheta = 0;
     var currentTheta = startTheta + offsetTheta;
     endTheta = endTheta + offsetTheta;
     while (currentTheta < endTheta) {
@@ -741,12 +739,12 @@ function Ball(center, radius, timesToSubdivide) {
 
 Ball.prototype.calculateShape = function () {
   this.tetrahedron(va, vb, vc, vd, this.timesToSubdivide);
-  for (var i=0; i<this.pointsArray.length; i++) {
+  /*for (var i=0; i<this.pointsArray.length; i++) {
     this.pointsArray[i] = add(this.pointsArray[i], this.center);
   }
   for (var i=0; i<this.normalsArray.length; i++) {
     this.normalsArray[i] = normalize(add(this.normalsArray[i], this.center), true);
-  }
+  }*/
 }
 
 Ball.prototype.triangle = function(a, b, c) {
@@ -760,9 +758,9 @@ Ball.prototype.triangle = function(a, b, c) {
      this.normalsArray.push(normal);
      this.normalsArray.push(normal);
 
-     a = scale(ballRadius, a);
-     b = scale(ballRadius, b);
-     c = scale(ballRadius, c);
+     a = scale(sRadius, a);
+     b = scale(sRadius, b);
+     c = scale(sRadius, c);
      a[3] = 1;
      b[3] = 1;
      c[3] = 1;
