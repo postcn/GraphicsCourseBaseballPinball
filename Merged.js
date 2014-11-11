@@ -28,7 +28,9 @@ var vb = vec4(0.0, 0.942809, 0.333333, 1);
 var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 var vd = vec4(0.816497, -0.471405, 0.333333,1);
 
-var lightPosition = vec4(-1.0, -1.0, 1.0, 0.0 );
+var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
+lightPosition = vec4(0, 0, 0, 0);
+var dlp = .1;
 var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -236,6 +238,14 @@ window.onload = function init() {
     document.getElementById("Button4").onclick = function(){theta[2] = theta[2] + dTheta};
     document.getElementById("Button5").onclick = function(){theta[2] = theta[2] - dTheta};
 
+
+    document.getElementById("ButtonLight0").onclick = function(){lightPosition[0] = lightPosition[0] + dlp};
+    document.getElementById("ButtonLight1").onclick = function(){lightPosition[0] = lightPosition[0] - dlp};
+    document.getElementById("ButtonLight2").onclick = function(){lightPosition[1] = lightPosition[1] + dlp};
+    document.getElementById("ButtonLight3").onclick = function(){lightPosition[1] = lightPosition[1] - dlp};
+    document.getElementById("ButtonLight4").onclick = function(){lightPosition[2] = lightPosition[2] + dlp};
+    document.getElementById("ButtonLight5").onclick = function(){lightPosition[2] = lightPosition[2] - dlp};
+
     gl.viewport( 0, 0, canvas.width, canvas.height );
     gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
 
@@ -259,18 +269,18 @@ window.onload = function init() {
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
 
-    bat = new Bat(vec3(-1/5,-1+(8/15),.05), 1/60, .05, .25, 75, - Math.PI / 6);
+    bat = new Bat(vec3(-1/5,-1+(8/15),-.1), 1/60, .05, .25, 75, - Math.PI / 6);
     bat.calculateShape();
 
     obstacles = [];
-    obstacles.push(new Obstacle(vec3(0, -.25, 0), ballRadius, .1, 75));
-    obstacles.push(new Obstacle(vec3(-.1, -.1,0), ballRadius, .1, 75, -1*Math.PI/6));
-    obstacles.push(new Obstacle(vec3(.1, -.1, 0), ballRadius, .1, 75, Math.PI/6));
-    obstacles.push(new Obstacle(vec3(-.30, -.25, 0), ballRadius, .1, 75, -1*Math.PI/4));
-    obstacles.push(new Obstacle(vec3(.30, -.25, 0), ballRadius, .1, 75, Math.PI/4));
-    obstacles.push(new Obstacle(vec3(0, .5, 0), ballRadius, .1, 75));
-    obstacles.push(new Obstacle(vec3(-.5, .32, 0), ballRadius, .1, 75, -1*Math.PI/4));
-    obstacles.push(new Obstacle(vec3(.5, .32, 0), ballRadius, .1, 75, Math.PI/4));
+    obstacles.push(new Obstacle(vec3(0, -.25, -.09), ballRadius, .1, 75));
+    obstacles.push(new Obstacle(vec3(-.1, -.1,-.09), ballRadius, .1, 75, -1*Math.PI/6));
+    obstacles.push(new Obstacle(vec3(.1, -.1, -.09), ballRadius, .1, 75, Math.PI/6));
+    obstacles.push(new Obstacle(vec3(-.30, -.25, -.09), ballRadius, .1, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.30, -.25, -.09), ballRadius, .1, 75, Math.PI/4));
+    obstacles.push(new Obstacle(vec3(0, .5, -.09), ballRadius, .1, 75));
+    obstacles.push(new Obstacle(vec3(-.5, .32, -.09), ballRadius, .1, 75, -1*Math.PI/4));
+    obstacles.push(new Obstacle(vec3(.5, .32, -.09), ballRadius, .1, 75, Math.PI/4));
 
     obstaclePoints = [];
     obstacleNormals = [];
@@ -280,7 +290,7 @@ window.onload = function init() {
       obstacleNormals = obstaclePoints.concat(obstacles[i].normals);
     }
 
-    ball = new Ball(vec4(0, .25, 0, 0),ballRadius, 7);
+    ball = new Ball(vec4(.4, .25, 0, 0),ballRadius, 4);
     ball.calculateShape();
 
     points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
@@ -493,7 +503,7 @@ function Bat(knobCenter, radius, height, batLength, divisions, angle) {
     this.divisions = divisions;
     this.normals = [];
     this.points = [];
-	this.batAngle = angle;
+	this.batAngle = 0;//angle;
 };
 
 Bat.prototype.calculateShape = function() {
@@ -516,8 +526,8 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
         p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]+this.height/2,1);
         p3 = vec4(circlePoints[i+1][0], circlePoints[i+1][1], centerPoint[2]+this.height/2,1);
         this.points = this.points.concat([p1,p3,p2]);
-        var t1 = subtract(p2, p1);
-        var t2 = subtract(p3, p1);
+        var t1 = subtract(p3, p1);
+        var t2 = subtract(p2, p1);
         var normal = normalize(cross(t1, t2));
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal]);
@@ -526,8 +536,8 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
         p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]-this.height/2,1);
         p3 = vec4(circlePoints[i+1][0], circlePoints[i+1][1], centerPoint[2]-this.height/2,1);
         this.points = this.points.concat([p1,p3,p2]);
-        var t1 = subtract(p2, p1);
-        var t2 = subtract(p3, p1);
+        var t1 = subtract(p3, p1);
+        var t2 = subtract(p2, p1);
         var normal = normalize(cross(t1, t2));
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal]);
@@ -537,8 +547,8 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
 	p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]+this.height/2,1);
 	p3 = vec4(circlePoints[0][0], circlePoints[0][1], centerPoint[2]+this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p2, p1);
-	var t2 = subtract(p3, p1);
+	var t1 = subtract(p3, p1);
+	var t2 = subtract(p2, p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
@@ -547,8 +557,8 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
 	p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]-this.height/2,1);
 	p3 = vec4(circlePoints[0][0], circlePoints[0][1], centerPoint[2]-this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p2);
-	var t2 = subtract(p1,p3);
+  var t1 = subtract(p3, p1);
+  var t2 = subtract(p2, p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
@@ -565,9 +575,9 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		end[1],
 		end[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p3);
-	var t2 = subtract(p1,p2);
-	var normal = normalize(cross(t1, t2));
+  var t1 = subtract(p3,p1);
+  var t2 = subtract(p2,p1);
+	var normal = normalize(cross(t2, t1));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
@@ -581,9 +591,9 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		end[1],
 		end[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p3);
-	var t2 = subtract(p1,p2);
-	var normal = normalize(cross(t1, t2));
+	var t1 = subtract(p3,p1);
+	var t2 = subtract(p2,p1);
+	var normal = normalize(cross(t2, t1));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
@@ -721,11 +731,12 @@ function Ball(center, radius, timesToSubdivide) {
 
 Ball.prototype.calculateShape = function () {
   this.tetrahedron(va, vb, vc, vd, this.timesToSubdivide);
-  console.log(this.pointsArray[0]);
   for (var i=0; i<this.pointsArray.length; i++) {
     this.pointsArray[i] = add(this.pointsArray[i], this.center);
   }
-  console.log(this.pointsArray[0]);
+  for (var i=0; i<this.normalsArray.length; i++) {
+    this.normalsArray[i] = normalize(add(this.normalsArray[i], this.center), true);
+  }
 }
 
 Ball.prototype.triangle = function(a, b, c) {
