@@ -5,14 +5,10 @@ var f;
 var obstacles;
 var ball;
 
-var ballRadius = .05;
+var ballRadius = .03;
 
 var points = [];
 var normals = [];
-
-var pointsArray = [];
-var normalsArray = [];
-var index = 0;
 
 
 var near = -10;
@@ -32,7 +28,7 @@ var vb = vec4(0.0, 0.942809, 0.333333, 1);
 var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 var vd = vec4(0.816497, -0.471405, 0.333333,1);
 
-var lightPosition = vec4(-1.0, 1.0, 1.0, 0.0 );
+var lightPosition = vec4(-1.0, -1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -284,9 +280,8 @@ window.onload = function init() {
       obstacleNormals = obstaclePoints.concat(obstacles[i].normals);
     }
 
-    ball = new Ball(ballRadius, 5);
+    ball = new Ball(vec4(0, .25, 0, 0),ballRadius, 7);
     ball.calculateShape();
-    //tetrahedron(va, vb, vc, vd, 5);
 
     points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
     normals = bat.normals.concat(obstacleNormals).concat(ball.normalsArray);
@@ -345,7 +340,7 @@ function ellipseWithRotation(centerPoint, yRadius, xRadius, startTheta, endTheta
     var currentTheta = startTheta;
     while (currentTheta < endTheta) {
 		ellipsePoints.push(vec2(
-		Math.cos(angle)*xRadius*Math.cos(currentTheta) + Math.sin(-1*angle)*yRadius*Math.sin(currentTheta) + centerPoint[0], 
+		Math.cos(angle)*xRadius*Math.cos(currentTheta) + Math.sin(-1*angle)*yRadius*Math.sin(currentTheta) + centerPoint[0],
 		Math.sin(angle)*xRadius*Math.cos(currentTheta) + Math.cos(-1*angle)*yRadius*Math.sin(currentTheta) + centerPoint[1]));
 		currentTheta += stepTheta;
     }
@@ -508,7 +503,7 @@ Bat.prototype.calculateShape = function() {
     this.getTopAndBottomCirclePanels(this.knobCenter, elipse1);
 	this.getTopAndBottomBarrelPanels(this.knobCenter, endCenter);
 	this.getTopAndBottomCirclePanels(endCenter, elipse2);
-	
+
     this.getSideCirclePanel(this.knobCenter, elipse1);
 	this.getSideBarrelPanel(this.knobCenter, endCenter);
 	this.getSideCirclePanel(endCenter, elipse2);
@@ -537,7 +532,7 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal]);
     }
-	
+
 	p1 = vec4(centerPoint[0], centerPoint[1], centerPoint[2]+this.height/2,1);
 	p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]+this.height/2,1);
 	p3 = vec4(circlePoints[0][0], circlePoints[0][1], centerPoint[2]+this.height/2,1);
@@ -561,13 +556,13 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
 
 Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	p1 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] + this.height/2,1);
-	p2 = vec4(end[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
-		end[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p2 = vec4(end[0] + Math.sin(-1*this.batAngle) * this.radius * 3,
+		end[1] + Math.cos(-1*this.batAngle) * this.radius * 3,
 		end[2] + this.height/2,1);
-	p3 = vec4(end[0], 
-		end[1], 
+	p3 = vec4(end[0],
+		end[1],
 		end[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p3);
@@ -577,13 +572,13 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	this.normals = this.normals.concat([normal,normal,normal]);
 
 	p1 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] - this.height/2,1);
-	p2 = vec4(end[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
-		end[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p2 = vec4(end[0] + Math.sin(-1*this.batAngle) * this.radius * 3,
+		end[1] + Math.cos(-1*this.batAngle) * this.radius * 3,
 		end[2] - this.height/2,1);
-	p3 = vec4(end[0], 
-		end[1], 
+	p3 = vec4(end[0],
+		end[1],
 		end[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p3);
@@ -591,15 +586,15 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
-	
-	p1 = vec4(end[0], 
-		end[1], 
+
+	p1 = vec4(end[0],
+		end[1],
 		end[2] + this.height/2,1);
 	p2 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] + this.height/2,1);
 	p3 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p2);
@@ -608,14 +603,14 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
-	p1 = vec4(end[0], 
-		end[1], 
+	p1 = vec4(end[0],
+		end[1],
 		end[2] - this.height/2,1);
 	p2 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] - this.height/2,1);
 	p3 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p2);
@@ -623,15 +618,15 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
-	
+
 	p1 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] + this.height/2,1);
-	p2 = vec4(end[0], 
-		end[1], 
+	p2 = vec4(end[0],
+		end[1],
 		end[2] + this.height/2,1);
-	p3 = vec4(end[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
-		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p3 = vec4(end[0] - Math.sin(-1*this.batAngle) * this.radius * 3,
+		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3,
 		end[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p3);
@@ -641,13 +636,13 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	this.normals = this.normals.concat([normal,normal,normal]);
 
 	p1 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
-		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] - this.height/2,1);
-	p2 = vec4(end[0], 
-		end[1], 
+	p2 = vec4(end[0],
+		end[1],
 		end[2] - this.height/2,1);
-	p3 = vec4(end[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
-		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p3 = vec4(end[0] - Math.sin(-1*this.batAngle) * this.radius * 3,
+		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3,
 		end[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
 	var t1 = subtract(p1,p3);
@@ -675,16 +670,16 @@ Bat.prototype.getSideCirclePanel = function(center, circlePoints) {
 
 Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
 	p1 = vec4(center[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
-		center[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[1] + Math.cos(-1*this.batAngle) * this.radius / 2,
 		center[2] + this.height/2,1);
-	p2 = vec4(endCenter[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
-		endCenter[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p2 = vec4(endCenter[0] + Math.sin(-1*this.batAngle) * this.radius * 3,
+		endCenter[1] + Math.cos(-1*this.batAngle) * this.radius * 3,
 		endCenter[2] + this.height/2,1);
 	p3 = vec4(center[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
-		center[1] + Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[1] + Math.cos(-1*this.batAngle) * this.radius / 2,
 		center[2] - this.height/2,1);
-	p4 = vec4(endCenter[0] + Math.sin(-1*this.batAngle) * this.radius * 3, 
-		endCenter[1] + Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p4 = vec4(endCenter[0] + Math.sin(-1*this.batAngle) * this.radius * 3,
+		endCenter[1] + Math.cos(-1*this.batAngle) * this.radius * 3,
 		endCenter[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p4,p2]);
 	this.points = this.points.concat([p1,p3,p4]);
@@ -693,18 +688,18 @@ Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
 	var normal = normalize(cross(t2, t1));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
-	
+
 	p1 = vec4(center[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
-		center[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		center[2] - this.height/2,1);
-	p2 = vec4(endCenter[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
-		endCenter[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p2 = vec4(endCenter[0] - Math.sin(-1*this.batAngle) * this.radius * 3,
+		endCenter[1] - Math.cos(-1*this.batAngle) * this.radius * 3,
 		endCenter[2] - this.height/2,1);
 	p3 = vec4(center[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
-		center[1] - Math.cos(-1*this.batAngle) * this.radius / 2, 
+		center[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		center[2] + this.height/2,1);
-	p4 = vec4(endCenter[0] - Math.sin(-1*this.batAngle) * this.radius * 3, 
-		endCenter[1] - Math.cos(-1*this.batAngle) * this.radius * 3, 
+	p4 = vec4(endCenter[0] - Math.sin(-1*this.batAngle) * this.radius * 3,
+		endCenter[1] - Math.cos(-1*this.batAngle) * this.radius * 3,
 		endCenter[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p4,p2]);
 	this.points = this.points.concat([p1,p3,p4]);
@@ -715,16 +710,22 @@ Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
 	this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
 };
 
-function Ball(radius, timesToSubdivide) {
+function Ball(center, radius, timesToSubdivide) {
   this.timesToSubdivide = timesToSubdivide;
   this.normalsArray = [];
   this.pointsArray = [];
   this.index = 0;
   this.radius= radius;
+  this.center = center;
 }
 
 Ball.prototype.calculateShape = function () {
-  this.tetrahedron(va, va, vc, vd, this.timesToSubdivide);
+  this.tetrahedron(va, vb, vc, vd, this.timesToSubdivide);
+  console.log(this.pointsArray[0]);
+  for (var i=0; i<this.pointsArray.length; i++) {
+    this.pointsArray[i] = add(this.pointsArray[i], this.center);
+  }
+  console.log(this.pointsArray[0]);
 }
 
 Ball.prototype.triangle = function(a, b, c) {
