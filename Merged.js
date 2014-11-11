@@ -6,7 +6,6 @@ var obstacles;
 var ball;
 
 var ballRadius = .03;
-var sRadius = .05
 
 var points = [];
 var normals = [];
@@ -758,9 +757,9 @@ Ball.prototype.triangle = function(a, b, c) {
      this.normalsArray.push(normal);
      this.normalsArray.push(normal);
 
-     a = scale(sRadius, a);
-     b = scale(sRadius, b);
-     c = scale(sRadius, c);
+     a = scale(ballRadius, a);
+     b = scale(ballRadius, b);
+     c = scale(ballRadius, c);
      a[3] = 1;
      b[3] = 1;
      c[3] = 1;
