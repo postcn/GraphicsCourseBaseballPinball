@@ -29,7 +29,7 @@ var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 var vd = vec4(0.816497, -0.471405, 0.333333,1);
 
 var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
-lightPosition = vec4(0, 0, 0, 0);
+//lightPosition = vec4(0, 0, 0, 0);
 var dlp = .1;
 var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -123,13 +123,23 @@ var thetaLoc2;
 
 function configureTexture() {
     texture1 = gl.createTexture();
+	var image = new Image();
+	image.crossOrigin = '';
+	image.onload = function() { 
+		gl.bindTexture (gl.TEXTURE_2D, texture1);
+		gl.texImage2D (gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+		gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	}
+	image.src = "Grass.gif";
+	
+    /*texture1 = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture1 );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, image1);
     gl.generateMipmap( gl.TEXTURE_2D );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
                       gl.NEAREST_MIPMAP_LINEAR );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);*/
 
     texture2 = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture2 );
@@ -177,8 +187,8 @@ function bindField() {
     gl.bindTexture( gl.TEXTURE_2D, texture1 );
     gl.uniform1i(gl.getUniformLocation( program1, "Tex0"), 0);
 
-    gl.activeTexture( gl.TEXTURE1 );
-    gl.bindTexture( gl.TEXTURE_2D, texture2 );
+	gl.activeTexture( gl.TEXTURE1 );
+    gl.bindTexture( gl.TEXTURE_2D, texture1 );
     gl.uniform1i(gl.getUniformLocation( program1, "Tex1"), 1);
 
     thetaLoc = gl.getUniformLocation(program1, "theta");
@@ -257,7 +267,7 @@ window.onload = function init() {
     program1 = initShaders( gl, "vertex-shader_texture", "fragment-shader_texture" );
     gl.useProgram( program1 );
 
-    f = new Field(vec3(0,-1,0), 1.9, 1.87, 1.9, .3);
+    f = new Field(vec3(0,-1,0), 1.7, 1.67, 1.7, .3);
     f.calculateShape();
 
     configureTexture();
@@ -269,7 +279,7 @@ window.onload = function init() {
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
 
-    bat = new Bat(vec3(-1/5,-1+(8/15),-.1), 1/60, .05, .25, 75, - Math.PI / 6);
+    bat = new Bat(vec3(-1/5,-1+(5/15),-.1), 1/60, .05, .25, 75, - Math.PI / 6);
     bat.calculateShape();
 
     obstacles = [];
@@ -359,8 +369,8 @@ function ellipseWithRotation(centerPoint, yRadius, xRadius, startTheta, endTheta
 
 function Field(centerPoint, centerFieldWall, rightFieldWall, leftFieldWall, height) {
     this.centerPoint = centerPoint;
-    this.xleft = Math.cos(Math.PI/4)*leftFieldWall;
-    this.xright = Math.cos(Math.PI/4)*rightFieldWall;
+    this.xleft = Math.cos(Math.PI/5)*leftFieldWall;
+    this.xright = Math.cos(Math.PI/5)*rightFieldWall;
     this.y = centerFieldWall;
     this.points = [];
     this.textures = [];
@@ -503,7 +513,7 @@ function Bat(knobCenter, radius, height, batLength, divisions, angle) {
     this.divisions = divisions;
     this.normals = [];
     this.points = [];
-	this.batAngle = 0;//angle;
+	this.batAngle = angle;
 };
 
 Bat.prototype.calculateShape = function() {
@@ -575,9 +585,9 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		end[1],
 		end[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-  var t1 = subtract(p3,p1);
-  var t2 = subtract(p2,p1);
-	var normal = normalize(cross(t2, t1));
+	var t1 = subtract(p2,p1);
+	var t2 = subtract(p3,p1);
+	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
@@ -591,9 +601,9 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		end[1],
 		end[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p3,p1);
-	var t2 = subtract(p2,p1);
-	var normal = normalize(cross(t2, t1));
+	var t1 = subtract(p2,p1);
+	var t2 = subtract(p3,p1);
+	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
@@ -607,8 +617,8 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p2);
-	var t2 = subtract(p1,p3);
+	var t1 = subtract(p2,p1);
+	var t2 = subtract(p3,p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
@@ -623,8 +633,8 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p2);
-	var t2 = subtract(p1,p3);
+	var t1 = subtract(p2,p1);
+	var t2 = subtract(p3,p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
@@ -639,8 +649,8 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3,
 		end[2] + this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p3);
-	var t2 = subtract(p1,p2);
+	var t1 = subtract(p2,p1);
+	var t2 = subtract(p3,p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
@@ -655,8 +665,8 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 		end[1] - Math.cos(-1*this.batAngle) * this.radius * 3,
 		end[2] - this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-	var t1 = subtract(p1,p3);
-	var t2 = subtract(p1,p2);
+	var t1 = subtract(p2,p1);
+	var t2 = subtract(p3,p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
