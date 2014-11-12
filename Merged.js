@@ -39,6 +39,9 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 1.0, 0.5, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+var obstacleAmbient = vec4( 0.0, 0.3, 1.0, 1.0 );
+var obstacleDiffuse = vec4( 0.0, 0.3, 1.0, 1.0 );
+var obstacleSpecular = vec4( 0.0, 0.3, 1.0, 1.0 );
 var materialShininess = 80.0;
 
 var ctm;
@@ -57,7 +60,7 @@ var numVertices  = 36;
 var texSize = 256;
 var numChecks = 8;
 
-var program1, program2;
+var program1, program2, programObstacle;
 
 var texture1, texture2;
 var t1, t2;
@@ -126,13 +129,13 @@ function configureTexture() {
     texture1 = gl.createTexture();
 	var image = new Image();
 	image.crossOrigin = '';
-	image.onload = function() { 
+	image.onload = function() {
 		gl.bindTexture (gl.TEXTURE_2D, texture1);
 		gl.texImage2D (gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
 		gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	}
 	image.src = "Grass.gif";
-	
+
     /*texture1 = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture1 );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -226,6 +229,46 @@ function bindLight() {
     thetaLoc2 = gl.getUniformLocation(program2, "theta");
 }
 
+var nBufferObstacle;
+var vNormalObstacle;
+var vBufferObstacle;
+var vPositionObstacle;
+
+function bindObstacle() {
+    nBufferObstacle = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBufferObstacle);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(obstacleNormals), gl.STATIC_DRAW);
+
+    vNormalObstacle = gl.getAttribLocation( programObstacle, "vNormal" );
+    gl.vertexAttribPointer( vNormalObstacle, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormalObstacle);
+
+
+    vBufferObstacle = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBufferObstacle);
+
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(obstaclePoints), gl.STATIC_DRAW);
+
+    vPositionObstacle = gl.getAttribLocation( programObstacle, "vPosition");
+    gl.vertexAttribPointer(vPositionObstacle, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPositionObstacle);
+
+    modelViewMatrixLoc = gl.getUniformLocation( programObstacle, "modelViewMatrix" );
+    projectionMatrixLoc = gl.getUniformLocation( programObstacle, "projectionMatrix" );
+
+    gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "ambientProduct"),flatten(ambientProductObstacle) );
+      gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "diffuseProduct"),flatten(diffuseProductObstacle) );
+      gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "specularProduct"),flatten(specularProductObstacle) );
+      gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "lightPosition"),flatten(lightPosition) );
+      gl.uniform1f( gl.getUniformLocation(programObstacle,
+         "shininess"),materialShininess );
+    thetaLoc2 = gl.getUniformLocation(programObstacle, "theta");
+}
+
 function bindMaterial()
 {
 	gl.uniform4fv( gl.getUniformLocation(program2,
@@ -278,15 +321,9 @@ window.onload = function init() {
 
     configureTexture();
 
-    program2 = initShaders( gl, "vertex-shader_light", "fragment-shader_light" );
-    gl.useProgram(program2);
-
-    ambientProduct = mult(lightAmbient, materialAmbient);
-    diffuseProduct = mult(lightDiffuse, materialDiffuse);
-    specularProduct = mult(lightSpecular, materialSpecular);
-
-    bat = new Bat(vec3(-1/5,-1+(5/15),-.1), 1/60, .05, .25, 75, - Math.PI / 6);
-    bat.calculateShape();
+    //Obstacle
+    programObstacle = initShaders(gl, "vertex-shader_obstacle", "fragment-shader_obstacle");
+    gl.useProgram(programObstacle);
 
     obstacles = [];
     obstacles.push(new Obstacle(vec3(0, -.4, -.09), ballRadius, .1, 75));
@@ -304,23 +341,52 @@ window.onload = function init() {
       obstacleNormals = obstacleNormals.concat(obstacles[i].normals);
     }
 
+    //Bat
+    program2 = initShaders( gl, "vertex-shader_light", "fragment-shader_light" );
+    gl.useProgram(program2);
+
+    ambientProduct = mult(lightAmbient, materialAmbient);
+    diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    specularProduct = mult(lightSpecular, materialSpecular);
+    ambientProductObstacle = mult(lightAmbient, obstacleAmbient);
+    diffuseProductObstacle = mult(lightDiffuse, obstacleDiffuse);
+    specularProductObstacle = mult(lightSpecular, obstacleSpecular);
+
+    bat = new Bat(vec3(-1/5,-1+(5/15),-.1), 1/60, .05, .25, 75, - Math.PI / 6);
+    bat.calculateShape();
+
     ball = new Ball(vec4(.3, .2, -0.12, 0),ballRadius, 5);
     ball.calculateShape();
 
-    points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
-    normals = bat.normals.concat(obstacleNormals).concat(ball.normalsArray);
-	
+    points = bat.points.concat(ball.pointsArray);
+    normals = bat.normals.concat(ball.normalsArray);
+
     render();
 }
 
 var render = function() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    //field
     gl.useProgram( program1 );
     bindField();
     gl.uniform3fv(thetaLoc, theta);
     gl.drawArrays( gl.TRIANGLES, 0, f.points.length );
 
+    gl.useProgram(programObstacle);
+    bindObstacle();
+    gl.uniform3fv(thetaLoc2, theta);
+    eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2),
+    radius2*Math.sin(theta2)*Math.sin(phi2), radius2*Math.cos(theta2));
+
+    modelViewMatrix = lookAt(eye, at , up);
+    projectionMatrix = ortho(left, right, bottom, ytop, near, far);
+
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
+    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
+    gl.drawArrays(gl.TRIANGLES, 0, obstaclePoints.length);
+
+    //bat
     gl.useProgram(program2);
     bindLight();
     eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2),
@@ -334,23 +400,17 @@ var render = function() {
     gl.uniform3fv(thetaLoc2, theta);
     for( var i=0; i<bat.points.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
-		
-	 materialAmbient = vec4( 1.0, 0.5, 1.0, 1.0 );
-	 materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
-	 materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
-    
-	for( var i=bat.points.length; i<obstaclePoints.length+bat.points.length; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 );
-	
+
+
 	/*materialAmbient = vec4( 0.8, 0.8, 0.8, 1.0 );
 	materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
 	materialSpecular = vec4( 0.8, 0.8, 0.8, 1.0 );
-		
+
 	ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);*/
-	
-	for( var i=obstaclePoints.length+bat.points.length; i<points.length; i+=3)
+
+	for( var i=bat.points.length; i<points.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 
     requestAnimFrame(render);
