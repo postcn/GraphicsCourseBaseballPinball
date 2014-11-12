@@ -9,6 +9,8 @@ var ballRadius = .03;
 
 var points = [];
 var normals = [];
+var obstaclePoints = [];
+var obstacleNormals = [];
 
 
 var near = -10;
@@ -30,7 +32,7 @@ var vd = vec4(0.916497, -0.471405, 0.333333,1);
 
 var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
 var dlp = .1;
-var lightAmbient = vec4(0.2, 0.9, 0.2, 1.0 );
+var lightAmbient = vec4(0.7, 0.7, 0.5, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
@@ -220,7 +222,13 @@ function bindLight() {
     modelViewMatrixLoc = gl.getUniformLocation( program2, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program2, "projectionMatrix" );
 
-    gl.uniform4fv( gl.getUniformLocation(program2,
+    bindMaterial();
+    thetaLoc2 = gl.getUniformLocation(program2, "theta");
+}
+
+function bindMaterial()
+{
+	gl.uniform4fv( gl.getUniformLocation(program2,
        "ambientProduct"),flatten(ambientProduct) );
     gl.uniform4fv( gl.getUniformLocation(program2,
        "diffuseProduct"),flatten(diffuseProduct) );
@@ -230,7 +238,6 @@ function bindLight() {
        "lightPosition"),flatten(lightPosition) );
     gl.uniform1f( gl.getUniformLocation(program2,
        "shininess"),materialShininess );
-    thetaLoc2 = gl.getUniformLocation(program2, "theta");
 }
 
 window.onload = function init() {
@@ -291,15 +298,13 @@ window.onload = function init() {
     obstacles.push(new Obstacle(vec3(-.5, .25, -.09), ballRadius, .1, 75, -1*Math.PI/4));
     obstacles.push(new Obstacle(vec3(.5, .25, -.09), ballRadius, .1, 75, Math.PI/4));
 
-    obstaclePoints = [];
-    obstacleNormals = [];
     for (var i=0; i< obstacles.length; i++) {
       obstacles[i].calculateShape();
       obstaclePoints = obstaclePoints.concat(obstacles[i].points);
       obstacleNormals = obstacleNormals.concat(obstacles[i].normals);
     }
 
-    ball = new Ball(vec4(.3, .2, 0, 0),ballRadius, 5);
+    ball = new Ball(vec4(.3, .2, -0.12, 0),ballRadius, 5);
     ball.calculateShape();
 
     points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
@@ -327,7 +332,25 @@ var render = function() {
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniform3fv(thetaLoc2, theta);
-    for( var i=0; i<points.length; i+=3)
+    for( var i=0; i<bat.points.length; i+=3)
+        gl.drawArrays( gl.TRIANGLES, i, 3 );
+		
+	 materialAmbient = vec4( 1.0, 0.5, 1.0, 1.0 );
+	 materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
+	 materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+    
+	for( var i=bat.points.length; i<obstaclePoints.length+bat.points.length; i+=3)
+        gl.drawArrays( gl.TRIANGLES, i, 3 );
+	
+	/*materialAmbient = vec4( 0.8, 0.8, 0.8, 1.0 );
+	materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
+	materialSpecular = vec4( 0.8, 0.8, 0.8, 1.0 );
+		
+	ambientProduct = mult(lightAmbient, materialAmbient);
+    diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    specularProduct = mult(lightSpecular, materialSpecular);*/
+	
+	for( var i=obstaclePoints.length+bat.points.length; i<points.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 
     requestAnimFrame(render);
