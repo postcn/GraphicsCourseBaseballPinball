@@ -23,10 +23,10 @@ var right = 1.0;
 var ytop =1.0;
 var bottom = -1.0;
 
-var va = vec4(0.1, 0.0, 1.0,1);
-var vb = vec4(0.1, 0.942809, -0.333333, 1);
-var vc = vec4(-0.716497, -0.471405, -0.333333, 1);
-var vd = vec4(0.916497, -0.471405, -0.333333,1);
+var va = vec4(0.1, 0.0, -1.0,1);
+var vb = vec4(0.1, 0.942809, 0.333333, 1);
+var vc = vec4(-0.716497, -0.471405, 0.333333, 1);
+var vd = vec4(0.916497, -0.471405, 0.333333,1);
 
 var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
 var dlp = .1;
@@ -302,8 +302,8 @@ window.onload = function init() {
     ball = new Ball(vec4(.3, .2, 0, 0),ballRadius, 5);
     ball.calculateShape();
 
-    points = ball.pointsArray.concat(obstaclePoints).concat(bat.points);
-    normals = ball.normalsArray.concat(obstacleNormals).concat(bat.normals);
+    points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
+    normals = bat.normals.concat(obstacleNormals).concat(ball.normalsArray);
 	
     render();
 }
