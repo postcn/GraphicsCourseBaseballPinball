@@ -302,8 +302,8 @@ window.onload = function init() {
     ball = new Ball(vec4(.3, .2, 0, 0),ballRadius, 5);
     ball.calculateShape();
 
-    points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
-    normals = bat.normals.concat(obstacleNormals).concat(ball.normalsArray);
+    points = ball.pointsArray.concat(obstaclePoints).concat(bat.points);
+    normals = ball.normalsArray.concat(obstacleNormals).concat(bat.normals);
 
     render();
 }
