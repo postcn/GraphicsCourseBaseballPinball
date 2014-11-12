@@ -36,14 +36,19 @@ var lightAmbient = vec4(0.7, 0.7, 0.5, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var materialAmbient = vec4( 1.0, 0.5, 1.0, 1.0 );
-var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
-var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialAmbient = vec4( 155/255, 133/255, 108/255, 1.0 );
+var materialDiffuse = vec4( 155/255, 133/255, 108/255, 1.0 );
+var materialSpecular = vec4( 155/255, 133/255, 108/255, 1.0 );
+//-183-158
+var obstacleAmbient = vec4( 0.0, 0.3, 1.0, 1.0 );
+var obstacleDiffuse = vec4( 0.0, 0.3, 1.0, 1.0 );
+var obstacleSpecular = vec4( 0.0, 0.3, 1.0, 1.0 );
+
 var materialShininess = 80.0;
 
-	ballAmbient = vec4( 0.9, 0.9, 0.9, 1.0 );
-	ballDiffuse = vec4( 0.9, 0.9, 0.9, 1.0 );
-	ballSpecular = vec4( 0.9, 0.9, 0.9, 1.0 );
+var ballAmbient = vec4( 0.75, 0.75, 0.75, 1.0 );
+var ballDiffuse = vec4( 0.75, 0.75, 0.75, 1.0 );
+var ballSpecular = vec4( 0.75, 0.75, 0.75, 1.0 );
 
 var ctm;
 
@@ -61,7 +66,7 @@ var numVertices  = 36;
 var texSize = 256;
 var numChecks = 8;
 
-var program1, program2, programBall;
+var program1, program2, programObstacle, programBall;
 
 var texture1, texture2;
 var t1, t2;
@@ -130,13 +135,13 @@ function configureTexture() {
     texture1 = gl.createTexture();
 	var image = new Image();
 	image.crossOrigin = '';
-	image.onload = function() { 
+	image.onload = function() {
 		gl.bindTexture (gl.TEXTURE_2D, texture1);
 		gl.texImage2D (gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
 		gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	}
 	image.src = "Grass.gif";
-	
+
     /*texture1 = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture1 );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -257,13 +262,52 @@ function bindBall() {
     modelViewMatrixLoc = gl.getUniformLocation( programBall, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( programBall, "projectionMatrix" );
 	
-    gl.uniform4fv( gl.getUniformLocation(programBall, "ballAmbientProduct"),flatten(ballAmbientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(programBall, "ballDiffuseProduct"),flatten(ballDiffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(programBall, "ballSpecularProduct"),flatten(ballSpecularProduct) );
-	//alert(ballAmbientProduct);
+    gl.uniform4fv( gl.getUniformLocation(programBall, "ambientProduct"),flatten(ballAmbientProduct) );
+    gl.uniform4fv( gl.getUniformLocation(programBall, "diffuseProduct"),flatten(ballDiffuseProduct) );
+    gl.uniform4fv( gl.getUniformLocation(programBall, "specularProduct"),flatten(ballSpecularProduct) );
     gl.uniform4fv( gl.getUniformLocation(programBall, "lightPosition"),flatten(lightPosition) );
     gl.uniform1f( gl.getUniformLocation(programBall, "shininess"),materialShininess );
     thetaLoc2 = gl.getUniformLocation(programBall, "theta");
+}
+
+var nBufferObstacle;
+var vNormalObstacle;
+var vBufferObstacle;
+var vPositionObstacle;
+
+function bindObstacle() {
+    nBufferObstacle = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBufferObstacle);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(obstacleNormals), gl.STATIC_DRAW);
+
+    vNormalObstacle = gl.getAttribLocation( programObstacle, "vNormal" );
+    gl.vertexAttribPointer( vNormalObstacle, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormalObstacle);
+
+
+    vBufferObstacle = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBufferObstacle);
+
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(obstaclePoints), gl.STATIC_DRAW);
+
+    vPositionObstacle = gl.getAttribLocation( programObstacle, "vPosition");
+    gl.vertexAttribPointer(vPositionObstacle, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPositionObstacle);
+
+    modelViewMatrixLoc = gl.getUniformLocation( programObstacle, "modelViewMatrix" );
+    projectionMatrixLoc = gl.getUniformLocation( programObstacle, "projectionMatrix" );
+
+    gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "ambientProduct"),flatten(ambientProductObstacle) );
+      gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "diffuseProduct"),flatten(diffuseProductObstacle) );
+      gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "specularProduct"),flatten(specularProductObstacle) );
+      gl.uniform4fv( gl.getUniformLocation(programObstacle,
+         "lightPosition"),flatten(lightPosition) );
+      gl.uniform1f( gl.getUniformLocation(programObstacle,
+         "shininess"),materialShininess );
+    thetaLoc2 = gl.getUniformLocation(programObstacle, "theta");
 }
 
 function bindMaterial()
@@ -325,12 +369,20 @@ window.onload = function init() {
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
 	
+    ambientProductObstacle = mult(lightAmbient, obstacleAmbient);
+    diffuseProductObstacle = mult(lightDiffuse, obstacleDiffuse);
+    specularProductObstacle = mult(lightSpecular, obstacleSpecular);
+	
 	ballAmbientProduct = mult(lightAmbient, ballAmbient);
     ballDiffuseProduct = mult(lightDiffuse, ballDiffuse);
     ballSpecularProduct = mult(lightSpecular, ballSpecular);
 
     bat = new Bat(vec3(-1/5,-1+(5/15),-.1), 1/60, .05, .25, 75, - Math.PI / 6);
     bat.calculateShape();
+	
+    //Obstacle
+    programObstacle = initShaders(gl, "vertex-shader_obstacle", "fragment-shader_obstacle");
+    gl.useProgram(programObstacle);
 
     obstacles = [];
     obstacles.push(new Obstacle(vec3(0, -.4, -.09), ballRadius, .1, 75));
@@ -350,24 +402,39 @@ window.onload = function init() {
 	
 	programBall = initShaders( gl, "vertex-shader_ball", "fragment-shader_ball" );
     gl.useProgram(programBall);
-	
+
     ball = new Ball(vec4(.3, .2, -0.12, 0),ballRadius, 5);
     ball.calculateShape();
 
-    points = bat.points.concat(obstaclePoints).concat(ball.pointsArray);
-    normals = bat.normals.concat(obstacleNormals).concat(ball.normalsArray);
-	
+    points = bat.points;
+    normals = bat.normals;
+
     render();
 }
 
 var render = function() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    //field
     gl.useProgram( program1 );
     bindField();
     gl.uniform3fv(thetaLoc, theta);
     gl.drawArrays( gl.TRIANGLES, 0, f.points.length );
 
+    gl.useProgram(programObstacle);
+    bindObstacle();
+    gl.uniform3fv(thetaLoc2, theta);
+    eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2),
+    radius2*Math.sin(theta2)*Math.sin(phi2), radius2*Math.cos(theta2));
+
+    modelViewMatrix = lookAt(eye, at , up);
+    projectionMatrix = ortho(left, right, bottom, ytop, near, far);
+
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
+    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
+    gl.drawArrays(gl.TRIANGLES, 0, obstaclePoints.length);
+
+    //bat
     gl.useProgram(program2);
     bindLight();
     eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2),
@@ -382,18 +449,18 @@ var render = function() {
     
 	for( var i=0; i<bat.points.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
-    
-	for( var i=bat.points.length; i<obstaclePoints.length+bat.points.length; i+=3)
-        gl.drawArrays( gl.TRIANGLES, i, 3 );
-	
+    	
 	gl.useProgram( programBall );
 	bindBall();
+	
 	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniform3fv(thetaLoc2, theta);
 	
 	for( var i=0; i<ball.pointsArray.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
+
+	
 
     requestAnimFrame(render);
 }
@@ -561,7 +628,7 @@ Obstacle.prototype.getSidePanel = function(ellipsePoints, circlePoints) {
         this.points = this.points.concat([p1,p3,p4]);
         var t1 = subtract(p2, p1);
         var t2 = subtract(p3, p1);
-        var normal = normalize(cross(t1, t2));
+        var normal = normalize(cross(t2, t1));
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
     }
