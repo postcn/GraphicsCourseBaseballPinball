@@ -296,7 +296,7 @@ window.onload = function init() {
     for (var i=0; i< obstacles.length; i++) {
       obstacles[i].calculateShape();
       obstaclePoints = obstaclePoints.concat(obstacles[i].points);
-      obstacleNormals = obstaclePoints.concat(obstacles[i].normals);
+      obstacleNormals = obstacleNormals.concat(obstacles[i].normals);
     }
 
     ball = new Ball(vec4(.3, .2, 0, 0),ballRadius, 5);
@@ -304,7 +304,7 @@ window.onload = function init() {
 
     points = ball.pointsArray.concat(obstaclePoints).concat(bat.points);
     normals = ball.normalsArray.concat(obstacleNormals).concat(bat.normals);
-
+	
     render();
 }
 
@@ -738,12 +738,12 @@ function Ball(center, radius, timesToSubdivide) {
 
 Ball.prototype.calculateShape = function () {
   this.tetrahedron(va, vb, vc, vd, this.timesToSubdivide);
-  /*for (var i=0; i<this.pointsArray.length; i++) {
+  for (var i=0; i<this.pointsArray.length; i++) {
     this.pointsArray[i] = add(this.pointsArray[i], this.center);
   }
   for (var i=0; i<this.normalsArray.length; i++) {
     this.normalsArray[i] = normalize(add(this.normalsArray[i], this.center), true);
-  }*/
+  }
 }
 
 Ball.prototype.triangle = function(a, b, c) {
