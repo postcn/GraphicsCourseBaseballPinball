@@ -1,7 +1,26 @@
 <!DOCTYPE html>
+<!--
+  Baseball Themed Pinball
+  CSSE 351
+
+  Caleb Post
+  John Krasich
+-->
 <html>
 
+<!--
+  Each of these shaders represents a single shader in the program. All the shaders have a very similar structure
+  where the position is relative to the angle theta. This allows us to rotate the entire projection so that we can
+  see it from any angle.
+
+  There is a vertex and fragment shader for each of the types of objects in our scene. The code in the _light, ball, and
+  obstacle shaders is identical but we had to seperate the shaders in order to get a different color for each type of
+  object.
+
+  The other shader, the one that is not identical, is used to render the field with its texture.
+-->
 <script id="vertex-shader_light" type="x-shader/x-vertex">
+
 
 attribute vec4 vPosition;
 attribute vec4 vNormal;
@@ -18,7 +37,6 @@ void main()
     L = normalize( light - pos );
     E =  -pos;
     N = normalize( (modelViewMatrix*vNormal).xyz);
-    //gl_Position = projectionMatrix * modelViewMatrix * vPosition;
 
     vec3 angles = radians( theta );
     vec3 c = cos( angles );

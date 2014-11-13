@@ -225,7 +225,7 @@ function bindBall() {
 
     modelViewMatrixLoc = gl.getUniformLocation( programBall, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( programBall, "projectionMatrix" );
-	
+
     gl.uniform4fv( gl.getUniformLocation(programBall, "ambientProduct"),flatten(ballAmbientProduct) );
     gl.uniform4fv( gl.getUniformLocation(programBall, "diffuseProduct"),flatten(ballDiffuseProduct) );
     gl.uniform4fv( gl.getUniformLocation(programBall, "specularProduct"),flatten(ballSpecularProduct) );
@@ -332,18 +332,18 @@ window.onload = function init() {
     ambientProduct = mult(lightAmbient, batAmbient);
     diffuseProduct = mult(lightDiffuse, batDiffuse);
     specularProduct = mult(lightSpecular, batSpecular);
-	
+
     ambientProductObstacle = mult(lightAmbient, obstacleAmbient);
     diffuseProductObstacle = mult(lightDiffuse, obstacleDiffuse);
     specularProductObstacle = mult(lightSpecular, obstacleSpecular);
-	
+
 	ballAmbientProduct = mult(lightAmbient, ballAmbient);
     ballDiffuseProduct = mult(lightDiffuse, ballDiffuse);
     ballSpecularProduct = mult(lightSpecular, ballSpecular);
 
     bat = new Bat(vec3(-1/5,-1+(5/15),-.1), 1/60, .05, .25, 75, - Math.PI / 6);
     bat.calculateShape();
-	
+
     //Obstacle
     programObstacle = initShaders(gl, "vertex-shader_obstacle", "fragment-shader_obstacle");
     gl.useProgram(programObstacle);
@@ -363,7 +363,7 @@ window.onload = function init() {
       obstaclePoints = obstaclePoints.concat(obstacles[i].points);
       obstacleNormals = obstacleNormals.concat(obstacles[i].normals);
     }
-	
+
 	programBall = initShaders( gl, "vertex-shader_ball", "fragment-shader_ball" );
     gl.useProgram(programBall);
 
@@ -407,21 +407,21 @@ var render = function() {
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniform3fv(thetaLoc2, theta);
-    
+
 	for( var i=0; i<bat.points.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
-    	
+
 	gl.useProgram( programBall );
 	bindBall();
-	
+
 	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniform3fv(thetaLoc2, theta);
-	
+
 	for( var i=0; i<ball.pointsArray.length; i+=3)
         gl.drawArrays( gl.TRIANGLES, i, 3 );
 
-	
+
 
     requestAnimFrame(render);
 }
