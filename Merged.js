@@ -1,3 +1,11 @@
+/*
+Baseball Themed Pinball
+CSSE 351
+
+Caleb Post
+John Krasich
+*/
+
 var GRAY = new vec4(125/255,125/255,125/255);
 var GREEN = new vec4(.2, 1, .2, 1);
 var SAND = new vec4(237/255, 201/255, 175/255, 1);
@@ -7,11 +15,8 @@ var ball;
 
 var ballRadius = .03;
 
-var points = [];
-var normals = [];
 var obstaclePoints = [];
 var obstacleNormals = [];
-
 
 var near = -10;
 var far = 10;
@@ -25,32 +30,32 @@ var right = 1.0;
 var ytop =1.0;
 var bottom = -1.0;
 
+// Used for sphere
 var va = vec4(0.1, 0.0, -1.0,1);
 var vb = vec4(0.1, 0.942809, 0.333333, 1);
 var vc = vec4(-0.716497, -0.471405, 0.333333, 1);
 var vd = vec4(0.916497, -0.471405, 0.333333,1);
 
-var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
+// Delta Line Position - Allows the user to move the light source
 var dlp = .1;
+var lightPosition = vec4(0.5, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.7, 0.7, 0.5, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var materialAmbient = vec4( 155/255, 133/255, 108/255, 1.0 );
-var materialDiffuse = vec4( 155/255, 133/255, 108/255, 1.0 );
-var materialSpecular = vec4( 155/255, 133/255, 108/255, 1.0 );
-//-183-158
+var batAmbient = vec4( 155/255, 133/255, 108/255, 1.0 );
+var batDiffuse = vec4( 155/255, 133/255, 108/255, 1.0 );
+var batSpecular = vec4( 155/255, 133/255, 108/255, 1.0 );
+
 var obstacleAmbient = vec4( 0.0, 0.3, 1.0, 1.0 );
 var obstacleDiffuse = vec4( 0.0, 0.3, 1.0, 1.0 );
 var obstacleSpecular = vec4( 0.0, 0.3, 1.0, 1.0 );
-
-var materialShininess = 80.0;
 
 var ballAmbient = vec4( 0.75, 0.75, 0.75, 1.0 );
 var ballDiffuse = vec4( 0.75, 0.75, 0.75, 1.0 );
 var ballSpecular = vec4( 0.75, 0.75, 0.75, 1.0 );
 
-var ctm;
+var materialShininess = 80.0;
 
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
@@ -60,48 +65,22 @@ var up = vec3(0.0, 1.0, 0.0);
 
 var canvas;
 var gl;
-
-var numVertices  = 36;
-
 var texSize = 256;
-var numChecks = 8;
 
-var program1, program2, programObstacle, programBall;
+var program1, programBat, programObstacle, programBall;
 
 var texture1, texture2;
-var t1, t2;
-
-var c;
-
-var flag = true;
-
-var image1 = new Uint8Array(4*texSize*texSize);
-
-    for ( var i = 0; i < texSize; i++ ) {
-        for ( var j = 0; j <texSize; j++ ) {
-            var patchx = Math.floor(i/(texSize/numChecks));
-            var patchy = Math.floor(j/(texSize/numChecks));
-            if(patchx%2 ^ patchy%2) c = 255;
-            else c = 0;
-            //c = 255*(((i & 0x8) == 0) ^ ((j & 0x8)  == 0))
-            image1[4*i*texSize+4*j] = c;
-            image1[4*i*texSize+4*j+1] = c;
-            image1[4*i*texSize+4*j+2] = c;
-            image1[4*i*texSize+4*j+3] = 255;
-        }
-    }
 
 var image2 = new Uint8Array(4*texSize*texSize);
-
-    // Create a checkerboard pattern
-    for ( var i = 0; i < texSize; i++ ) {
-        for ( var j = 0; j <texSize; j++ ) {
-            image2[4*i*texSize+4*j] = 127+127*Math.sin(0.1*i*j);
-            image2[4*i*texSize+4*j+1] = 127+127*Math.sin(0.1*i*j);
-            image2[4*i*texSize+4*j+2] = 127+127*Math.sin(0.1*i*j);
-            image2[4*i*texSize+4*j+3] = 255;
-           }
-    }
+// Create a checkerboard pattern
+for ( var i = 0; i < texSize; i++ ) {
+	for ( var j = 0; j <texSize; j++ ) {
+		image2[4*i*texSize+4*j] = 127+127*Math.sin(0.1*i*j);
+		image2[4*i*texSize+4*j+1] = 127+127*Math.sin(0.1*i*j);
+		image2[4*i*texSize+4*j+2] = 127+127*Math.sin(0.1*i*j);
+		image2[4*i*texSize+4*j+3] = 255;
+	}
+}
 
 var pointsArray = [];
 var colorsArray = [];
@@ -119,12 +98,6 @@ var TOP_LEFT = texCoord[1];
 var BOTTOM_RIGHT = texCoord[3];
 var TOP_RIGHT = texCoord[2];
 
-
-var xAxis = 0;
-var yAxis = 1;
-var zAxis = 2;
-var axis = xAxis;
-
 var theta = [-20, 180, 0];
 theta = [0,180,0];
 var dTheta = 10;
@@ -141,15 +114,6 @@ function configureTexture() {
 		gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	}
 	image.src = "Grass.gif";
-
-    /*texture1 = gl.createTexture();
-    gl.bindTexture( gl.TEXTURE_2D, texture1 );
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, image1);
-    gl.generateMipmap( gl.TEXTURE_2D );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-                      gl.NEAREST_MIPMAP_LINEAR );
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);*/
 
     texture2 = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture2 );
@@ -212,9 +176,9 @@ var vPosition2;
 function bindLight() {
     nBuffer2 = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer2);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(bat.normals), gl.STATIC_DRAW);
 
-    vNormal2 = gl.getAttribLocation( program2, "vNormal" );
+    vNormal2 = gl.getAttribLocation( programBat, "vNormal" );
     gl.vertexAttribPointer( vNormal2, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal2);
 
@@ -222,17 +186,17 @@ function bindLight() {
     vBuffer2 = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer2);
 
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(bat.points), gl.STATIC_DRAW);
 
-    vPosition2 = gl.getAttribLocation( program2, "vPosition");
+    vPosition2 = gl.getAttribLocation( programBat, "vPosition");
     gl.vertexAttribPointer(vPosition2, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition2);
 
-    modelViewMatrixLoc = gl.getUniformLocation( program2, "modelViewMatrix" );
-    projectionMatrixLoc = gl.getUniformLocation( program2, "projectionMatrix" );
+    modelViewMatrixLoc = gl.getUniformLocation( programBat, "modelViewMatrix" );
+    projectionMatrixLoc = gl.getUniformLocation( programBat, "projectionMatrix" );
 
     bindMaterial();
-    thetaLoc2 = gl.getUniformLocation(program2, "theta");
+    thetaLoc2 = gl.getUniformLocation(programBat, "theta");
 }
 
 var nBallBuffer;
@@ -312,15 +276,15 @@ function bindObstacle() {
 
 function bindMaterial()
 {
-	gl.uniform4fv( gl.getUniformLocation(program2,
+	gl.uniform4fv( gl.getUniformLocation(programBat,
        "ambientProduct"),flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program2,
+    gl.uniform4fv( gl.getUniformLocation(programBat,
        "diffuseProduct"),flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program2,
+    gl.uniform4fv( gl.getUniformLocation(programBat,
        "specularProduct"),flatten(specularProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program2,
+    gl.uniform4fv( gl.getUniformLocation(programBat,
        "lightPosition"),flatten(lightPosition) );
-    gl.uniform1f( gl.getUniformLocation(program2,
+    gl.uniform1f( gl.getUniformLocation(programBat,
        "shininess"),materialShininess );
 }
 
@@ -362,12 +326,12 @@ window.onload = function init() {
 
     configureTexture();
 
-    program2 = initShaders( gl, "vertex-shader_light", "fragment-shader_light" );
-    gl.useProgram(program2);
+    programBat = initShaders( gl, "vertex-shader_light", "fragment-shader_light" );
+    gl.useProgram(programBat);
 
-    ambientProduct = mult(lightAmbient, materialAmbient);
-    diffuseProduct = mult(lightDiffuse, materialDiffuse);
-    specularProduct = mult(lightSpecular, materialSpecular);
+    ambientProduct = mult(lightAmbient, batAmbient);
+    diffuseProduct = mult(lightDiffuse, batDiffuse);
+    specularProduct = mult(lightSpecular, batSpecular);
 	
     ambientProductObstacle = mult(lightAmbient, obstacleAmbient);
     diffuseProductObstacle = mult(lightDiffuse, obstacleDiffuse);
@@ -406,9 +370,6 @@ window.onload = function init() {
     ball = new Ball(vec4(.3, .2, -0.12, 0),ballRadius, 5);
     ball.calculateShape();
 
-    points = bat.points;
-    normals = bat.normals;
-
     render();
 }
 
@@ -435,7 +396,7 @@ var render = function() {
     gl.drawArrays(gl.TRIANGLES, 0, obstaclePoints.length);
 
     //bat
-    gl.useProgram(program2);
+    gl.useProgram(programBat);
     bindLight();
     eye = vec3(radius2*Math.sin(theta2)*Math.cos(phi2),
     radius2*Math.sin(theta2)*Math.sin(phi2), radius2*Math.cos(theta2));
@@ -466,10 +427,6 @@ var render = function() {
 }
 
 /*
-Add the code for the field object and associated information
-*/
-
-/*
 Generates a list of points around the edge of an ellipse in 2 space.
 */
 function ellipse(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta, offsetTheta) {
@@ -484,6 +441,10 @@ function ellipse(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta,
     return ellipsePoints;
 };
 
+/*
+Generates a list of points around the edge of an ellipse in 2 space rotated at an angle around the center point.
+Used in bat rotation.
+*/
 function ellipseWithRotation(centerPoint, yRadius, xRadius, startTheta, endTheta, stepTheta, angle) {
     var ellipsePoints = [];
     var currentTheta = startTheta;
@@ -558,6 +519,9 @@ Field.prototype.addFloor = function(ellipsePoints) {
     }
 };
 
+//Obstacle takes in center point, radius of inner circle, height on field, number of divisions to use in
+//circle and ellipse, and offset between points
+
 function Obstacle(center, radius, height, divisions, offsetTheta) {
     this.center = center;
     this.radius = radius;
@@ -568,6 +532,8 @@ function Obstacle(center, radius, height, divisions, offsetTheta) {
     this.offsetTheta = offsetTheta;
 }
 
+//Obstacle created by draw a circle inside of an ellipse, and connecting the outside of the circle to the inside of the ellipse
+
 Obstacle.prototype.calculateShape = function() {
     ellipsePoints = ellipse(this.center, 3*this.radius, this.radius, -1*Math.PI/2, Math.PI/2, Math.PI/this.divisions, this.offsetTheta);
     circlePoints = ellipse(this.center, this.radius, this.radius, -1*Math.PI/2, Math.PI/2, Math.PI/this.divisions, this.offsetTheta);
@@ -576,6 +542,9 @@ Obstacle.prototype.calculateShape = function() {
     this.getTopAndBottomPanels(ellipsePoints, circlePoints);
 
 }
+
+//Top pannel of Obstacle is created by connecting the inner circle to outer ellipse
+//While originally programmed to display both top and bottom, the bottom is out of view and does not need to be rendered.
 
 Obstacle.prototype.getTopAndBottomPanels = function(ellipsePoints, circlePoints) {
     for (var i=0; i<ellipsePoints.length -1; i++) {
@@ -591,7 +560,7 @@ Obstacle.prototype.getTopAndBottomPanels = function(ellipsePoints, circlePoints)
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
 
-        p1 = vec4(circlePoints[i][0], circlePoints[i][1], this.center[2]-this.height/2,1);
+        /*p1 = vec4(circlePoints[i][0], circlePoints[i][1], this.center[2]-this.height/2,1);
         p2 = vec4(circlePoints[i+1][0], circlePoints[i+1][1], this.center[2]-this.height/2,1);
         p3 = vec4(ellipsePoints[i][0], ellipsePoints[i][1], this.center[2]-this.height/2,1);
         p4 = vec4(ellipsePoints[i+1][0], ellipsePoints[i+1][1], this.center[2]-this.height/2,1);
@@ -601,9 +570,11 @@ Obstacle.prototype.getTopAndBottomPanels = function(ellipsePoints, circlePoints)
         var t2 = subtract(p3, p1);
         var normal = normalize(cross(t1, t2));
         normal = vec4(normal);
-        this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
+        this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);*/
     }
 }
+
+//Rounded sides consist of inner circle and outer ellipse
 
 Obstacle.prototype.getSidePanel = function(ellipsePoints, circlePoints) {
     for (var i=0; i<circlePoints.length-1; i++) {
@@ -634,6 +605,9 @@ Obstacle.prototype.getSidePanel = function(ellipsePoints, circlePoints) {
     }
 }
 
+//Bat takes in the knobs center point, a radius (from knob center to bottom of knob), hight on field, bat length (from knob center to bat end center),
+//number of divisions to use in making the knob and bat end, and angle to face on the field.
+
 function Bat(knobCenter, radius, height, batLength, divisions, angle) {
     this.knobCenter = knobCenter;
     this.radius = radius;
@@ -644,6 +618,8 @@ function Bat(knobCenter, radius, height, batLength, divisions, angle) {
     this.points = [];
 	this.batAngle = angle;
 };
+
+//Bat consists of two ellipses connected by the barrel (three triangles)
 
 Bat.prototype.calculateShape = function() {
     elipse1 = ellipseWithRotation(this.knobCenter, 2*this.radius, this.radius, 0, 2 * Math.PI, 2 * Math.PI/this.divisions, this.batAngle);
@@ -658,6 +634,9 @@ Bat.prototype.calculateShape = function() {
 	this.getSideCirclePanel(endCenter, elipse2);
 };
 
+//Draws the ellipses that make up the knob and bat end.
+//While originally programmed to display both top and bottom, the bottom is out of view and does not need to be rendered.
+
 Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) {
 
     for (var i=0; i<circlePoints.length - 1; i++) {
@@ -671,7 +650,7 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
         normal = vec4(normal);
         this.normals = this.normals.concat([normal,normal,normal]);
 
-        p1 = vec4(centerPoint[0], centerPoint[1], centerPoint[2]-this.height/2,1);
+        /*p1 = vec4(centerPoint[0], centerPoint[1], centerPoint[2]-this.height/2,1);
         p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]-this.height/2,1);
         p3 = vec4(circlePoints[i+1][0], circlePoints[i+1][1], centerPoint[2]-this.height/2,1);
         this.points = this.points.concat([p1,p3,p2]);
@@ -679,7 +658,7 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
         var t2 = subtract(p2, p1);
         var normal = normalize(cross(t1, t2));
         normal = vec4(normal);
-        this.normals = this.normals.concat([normal,normal,normal]);
+        this.normals = this.normals.concat([normal,normal,normal]);*/
     }
 
 	p1 = vec4(centerPoint[0], centerPoint[1], centerPoint[2]+this.height/2,1);
@@ -692,16 +671,19 @@ Bat.prototype.getTopAndBottomCirclePanels = function(centerPoint, circlePoints) 
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
-	p1 = vec4(centerPoint[0], centerPoint[1], centerPoint[2]-this.height/2,1);
+	/*p1 = vec4(centerPoint[0], centerPoint[1], centerPoint[2]-this.height/2,1);
 	p2 = vec4(circlePoints[i][0], circlePoints[i][1], centerPoint[2]-this.height/2,1);
 	p3 = vec4(circlePoints[0][0], circlePoints[0][1], centerPoint[2]-this.height/2,1);
 	this.points = this.points.concat([p1,p3,p2]);
-  var t1 = subtract(p3, p1);
-  var t2 = subtract(p2, p1);
+	var t1 = subtract(p3, p1);
+	var t2 = subtract(p2, p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
-	this.normals = this.normals.concat([normal,normal,normal]);
+	this.normals = this.normals.concat([normal,normal,normal]);*/
 };
+
+//The barrel consists of three triangles. This allows for the barrel to widen rather than being just a rectangle.
+//While originally programmed to display both top and bottom, the bottom is out of view and does not need to be rendered.
 
 Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	p1 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
@@ -720,7 +702,7 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
-	p1 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
+	/*p1 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
 		knob[1] + Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] - this.height/2,1);
 	p2 = vec4(end[0] + Math.sin(-1*this.batAngle) * this.radius * 3,
@@ -734,7 +716,7 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	var t2 = subtract(p3,p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
-	this.normals = this.normals.concat([normal,normal,normal]);
+	this.normals = this.normals.concat([normal,normal,normal]);*/
 
 	p1 = vec4(end[0],
 		end[1],
@@ -752,7 +734,7 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
-	p1 = vec4(end[0],
+	/*p1 = vec4(end[0],
 		end[1],
 		end[2] - this.height/2,1);
 	p2 = vec4(knob[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
@@ -766,7 +748,7 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	var t2 = subtract(p3,p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
-	this.normals = this.normals.concat([normal,normal,normal]);
+	this.normals = this.normals.concat([normal,normal,normal]);*/
 
 	p1 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
 		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
@@ -784,7 +766,7 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	normal = vec4(normal);
 	this.normals = this.normals.concat([normal,normal,normal]);
 
-	p1 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
+	/*p1 = vec4(knob[0] - Math.sin(-1*this.batAngle) * this.radius / 2,
 		knob[1] - Math.cos(-1*this.batAngle) * this.radius / 2,
 		knob[2] - this.height/2,1);
 	p2 = vec4(end[0],
@@ -798,8 +780,10 @@ Bat.prototype.getTopAndBottomBarrelPanels = function(knob, end) {
 	var t2 = subtract(p3,p1);
 	var normal = normalize(cross(t1, t2));
 	normal = vec4(normal);
-	this.normals = this.normals.concat([normal,normal,normal]);
+	this.normals = this.normals.concat([normal,normal,normal]);*/
 };
+
+//Side pieces of the knob and end of the bat
 
 Bat.prototype.getSideCirclePanel = function(center, circlePoints) {
     for (var i=0; i<circlePoints.length-1; i++) {
@@ -816,6 +800,8 @@ Bat.prototype.getSideCirclePanel = function(center, circlePoints) {
         this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
     }
 };
+
+//Two rectangles  make of the sides of the bat barrel
 
 Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
 	p1 = vec4(center[0] + Math.sin(-1*this.batAngle) * this.radius / 2,
@@ -859,6 +845,8 @@ Bat.prototype.getSideBarrelPanel = function(center, endCenter) {
 	this.normals = this.normals.concat([normal,normal,normal,normal,normal,normal]);
 };
 
+//The ball follows the shaded sphere from class, as a tetrahedron of divided triangles
+
 function Ball(center, radius, timesToSubdivide) {
   this.timesToSubdivide = timesToSubdivide;
   this.normalsArray = [];
@@ -867,6 +855,8 @@ function Ball(center, radius, timesToSubdivide) {
   this.radius= radius;
   this.center = center;
 }
+
+//Ball is shifted by moving the points and normals to specified center point
 
 Ball.prototype.calculateShape = function () {
   this.tetrahedron(va, vb, vc, vd, this.timesToSubdivide);
